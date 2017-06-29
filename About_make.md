@@ -1,4 +1,4 @@
-<p align="right"><a href="https://doexercise.github.com">Table of Contents</a></p>  
+<p align="right"><a href="https://doexercise.github.io">Table of Contents</a></p>  
 
 # ***Introduction***
 Makefile에 대한 사항들을 정리하기 위한 페이지이다.
