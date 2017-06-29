@@ -5,7 +5,7 @@
 
 <br />
 
-> **My Blog** : [https://doexercise.github.io/][Blog]
+> **My Blog** : [https://doexercise.github.io/][Blog]  
 > **My Github** : [https://github.com/doexercise/][Home]  
 > **Blog Source** : [https://github.com/doexercise/doexercise.github.io/][BlogSrc]
 
