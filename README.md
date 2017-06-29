@@ -1,3 +1,5 @@
+<br />
+
 <h1><a href="https://doexercise.github.io"><strong><i>ckun's note</i></strong></a></h1>  
 
 
@@ -6,10 +8,10 @@
 * Page 2
 * Page 3
 
-> **My Home** : [https://github.com/doexercise/][Home]
+> **My Github** : [https://github.com/doexercise/][Home]  
+> **My Blog** : [https://github.com/doexercise/doexercise.github.io/][Blog]
 
 <br />
 
-***
-
-[Home]:https://github.com/doexercise/ 
+[Home]:https://github.com/doexercise/  
+[Blog]:https://github.com/doexercise/doexercise.github.io/  
