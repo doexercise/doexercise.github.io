@@ -51,4 +51,4 @@ Makefile에 대한 사항들을 정리하기 위한 페이지이다.
 
 <br />
 
-## [**Table of Contents**](README.md)
+## [**Table of Contents**](../README.md)

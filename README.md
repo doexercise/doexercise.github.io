@@ -1,5 +1,5 @@
 ## Table of Contents
-* [How to use Makefile](About_make.md)
+* [How to use Makefile](post/About_make.md)
 * Page 2
 * Page 3
 
