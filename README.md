@@ -1,6 +1,4 @@
-<br />
-
-<h1><a href="https://doexercise.github.io"><strong><i>ckun's note</i></strong></a></h1>  
+# [**ckun's note**][Blog]
 
 
 ## Table of Contents
@@ -9,9 +7,10 @@
 * Page 3
 
 > **My Github** : [https://github.com/doexercise/][Home]  
-> **My Blog** : [https://github.com/doexercise/doexercise.github.io/][Blog]
+> **Blog Src** : [https://github.com/doexercise/doexercise.github.io/][BlogSrc]
 
 <br />
 
 [Home]:https://github.com/doexercise/  
-[Blog]:https://github.com/doexercise/doexercise.github.io/  
+[Blog]:https://doexercise.github.io/
+[BlogSrc]:https://github.com/doexercise/doexercise.github.io/  
