@@ -27,7 +27,7 @@ Makefile에 대한 사항들을 정리하기 위한 페이지이다.
 	```
 <br />
 
-### modules_install  
+## modules_install  
 * 기본적으로 /lib/modules/ 이하에 설치되며, `INSTALL_MOD_PATH` 를 사용하여 설치 경로를 변경할 수 있다.  
 	```Makefile
 	make -C $(KERNEL_DIR) M=$(PWD) INSTALL_MOD_PATH=/usr/local/ modules_install  
