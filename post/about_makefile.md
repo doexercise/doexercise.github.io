@@ -5,7 +5,7 @@ Makefile에 대한 사항들을 정리하기 위한 페이지이다.
 
 <br />
 
-### Basic Example  
+## Basic Example  
 * 모듈을 빌드하는 간단한 예제이다.  
 	```Makefile
 	TARGET_NAME = ckun
