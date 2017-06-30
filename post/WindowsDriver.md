@@ -10,7 +10,7 @@ Windows Device Driver 작성에 대한 내용을 정리하였다.
 
 ## Basic Example
 
-```C
+```js
 typedef PCHAR(*GET_PROCESS_IMAGE_NAME)(PEPROCESS Process);
 GET_PROCESS_IMAGE_NAME PsGetProcessImageFileName;
 
@@ -74,13 +74,13 @@ FLT_PREOP_CALLBACK_STATUS FsFilterPreOperation(
 }
 ```
 
-* 아래 함수들도 참고해 보자.  
-    - PsLookupProcessByProcessId();  
-    - IoGetRequestorProcess();  
-    - IoGetRequestorProcessId();  
-    - IoGetRequestorSessionId();  
-    - IoQueryFileDosDeviceName();  
-    - RtlVolumeDeviceToDosName();  
+## 참고할 함수들  
+> PsLookupProcessByProcessId();  
+> IoGetRequestorProcess();  
+> IoGetRequestorProcessId();  
+> IoGetRequestorSessionId();  
+> IoQueryFileDosDeviceName();  
+> RtlVolumeDeviceToDosName();  
 
 <br />
 
