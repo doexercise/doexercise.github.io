@@ -56,9 +56,9 @@ try-except 문은 C, C++ 모두 사용가능하지만 C++의 경우 언어자체
 
 	| 매크로 | 정수값 | 의미 |
 	|:---|:---:|:---|
-	|EXCEPTION_CONTINUE_EXECUTION | -1 | 예외를 무시하고 이후 계속 실행 |
-	|EXCEPTION_CONTINUE_SEARCH | 0 | 현재 exception 블록 안에서 처리하지 않고 상위 핸들러에게 넘김 |
-	|EXCEPTION_EXECUTE_HANDLER | 1 | 예외처리 수행 |
+	| EXCEPTION_CONTINUE_EXECUTION | -1 | 예외를 무시하고 이후 계속 실행 |
+	| EXCEPTION_CONTINUE_SEARCH | 0 | 현재 exception 블록 안에서 처리하지 않고 상위 핸들러에게 넘김 |
+	| EXCEPTION_EXECUTE_HANDLER | 1 | 예외처리 수행 |
 
 * 위의 값(-1, 0, 1) 을 전달하기 위해 함수호출, 조건식, 쉼표를 사용할 수 있음
 	```C
