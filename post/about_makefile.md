@@ -43,7 +43,7 @@ Makefile에 대한 사항들을 정리하기 위한 페이지이다.
 	```
 <br />
 
-### clean
+### **clean**
 * 생성된 파일을 삭제하기 위해 `rm` 명령어를 사용하기도 하는데 `make -C .... clean` 하면 소스 파일을 제외하고 전부 삭제해 준다
 	```Makefile
 	make -C $(KERNEL_DIR) M=$(PWD) clean
