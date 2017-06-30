@@ -10,7 +10,7 @@ Windows Device Driver 작성에 대한 내용을 정리하였다.
 
 ## Basic Example
 
-```js
+```
 typedef PCHAR(*GET_PROCESS_IMAGE_NAME)(PEPROCESS Process);
 GET_PROCESS_IMAGE_NAME PsGetProcessImageFileName;
 
