@@ -5,13 +5,13 @@ Visual C/C++ 에서의 구조적 예외처리
 
 <br />
 
-### What is SEH?
+## What is SEH?
 try-except 문은 정상적으로 프로그램 실행을 종료시키는 이벤트가 발생할 때, 대상 응용 프로그램이 제어할 수 있도록 하는 C와 C++언어의 Microsoft 확장이며, 이를 구조적 예외처리라고 함.
 
-### SEH vs try-catch  
+## SEH vs try-catch  
 try-except 문은 C, C++ 모두 사용가능하지만 C++의 경우 언어자체가 지원하고 있는 try-catch 를 사용하는 것이 보다 유연하므로 try-catch 를 사용하길 권장  
 
-### Basic Example
+## Basic Example
 * __try __except  
 	```C
 	__try {
@@ -51,7 +51,7 @@ try-except 문은 C, C++ 모두 사용가능하지만 C++의 경우 언어자체
 	}
 	```
 
-### EXCEPTION_FILTER  
+## EXCEPTION_FILTER  
 * EXCEPTION FILTER 로 다음 값 사용  
 
 	| 매크로 | 정수값 | 의미 |
@@ -85,7 +85,7 @@ try-except 문은 C, C++ 모두 사용가능하지만 C++의 경우 언어자체
 	__except( printf("Exception!!!"), EXCEPTION_EXECUTE_HANDLER ) {}
 	```
 
-### 디바이스 드라이버의 경우
+## 디바이스 드라이버의 경우
 * 예외처리가 정상적으로 수행되면 BSOD를 피할 수 있다
 * 다만, 모든 예외를 처리할 수 있는 것은 아니다.
 * 예외처리에 오버헤드가 있으므로 성능 저하가 생길 수 있다.
