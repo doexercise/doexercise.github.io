@@ -5,7 +5,7 @@ Makefile에 대한 사항들을 정리하기 위한 페이지이다.
 
 <br />
 
-## Basic Example  
+### Basic Example  
 * 모듈을 빌드하는 간단한 예제이다.  
 	```Makefile
 	TARGET_NAME = ckun
@@ -27,7 +27,7 @@ Makefile에 대한 사항들을 정리하기 위한 페이지이다.
 	```
 <br />
 
-## modules_install  
+### modules_install  
 * 기본적으로 /lib/modules/ 이하에 설치되며, `INSTALL_MOD_PATH` 를 사용하여 설치 경로를 변경할 수 있다.  
 	```Makefile
 	make -C $(KERNEL_DIR) M=$(PWD) INSTALL_MOD_PATH=/usr/local/ modules_install  
@@ -43,7 +43,7 @@ Makefile에 대한 사항들을 정리하기 위한 페이지이다.
 	```
 <br />
 
-### **clean**
+### clean
 * 생성된 파일을 삭제하기 위해 `rm` 명령어를 사용하기도 하는데 `make -C .... clean` 하면 소스 파일을 제외하고 전부 삭제해 준다
 	```Makefile
 	make -C $(KERNEL_DIR) M=$(PWD) clean
