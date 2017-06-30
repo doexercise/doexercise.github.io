@@ -1,6 +1,6 @@
 ## Table of Contents
-* [How to use Makefile](post/About_make.md)
-* Page 2
+* [How to use Makefile](post/about_makefile.md)
+* [Structured Exception Handling](post/StructuredExceptionHandling.md)
 * Page 3
 
 <br />
