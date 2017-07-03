@@ -6,35 +6,11 @@ Linux Device Driver 제작에 대한 노트
 <br />
 
 # ***Bottom half***
-Interrupt 처리를 전반부 처리(Top half)로 봤을 때 지연된 처리를 후반부 처리(Bottom half)라 하며, kernel 2.6 이후 이에 대한 구현은 softirq, [tasklet](#tasklet), workqueue 를 사용한다.
+Interrupt 처리를 전반부 처리(Top half)로 봤을 때 지연된 처리를 후반부 처리(Bottom half)라 하며, kernel 2.6 이후 이에 대한 구현은 softirq, [tasklet](#tasklet), [workqueue](#workqueue) 를 사용한다.
 
 ## tasklet
 tasklet은 softirq 로 구현되어있다. 그러나 거의 softirq 보다 tasklet으로 처리한다. 그리고 이것은 kernel 2.6 이전의 taskqueue와 관계가 없다. <br>
 workqueue에 비해 높은 우선순위를 가지며 휴면 상태로 전환될 일이 없으면 workqueue보다 tasklet으로 처리한다. 
-
-### 정적 생성
-```C
-/**
- * name : 생성할 tasklet_struct 구조체의 이름.
- * func : tasklet의 핸들러 함수
- * data : tasklet handler에 전달될 인자의 주소. 즉 인자의 포인터.
- */
-DECLARE_TASKLET(name, func, data);
-```
-
-### tasklet 실행 요청(스케줄 등록)
-```C
-/**
- * 커널에 스케줄링을 요청. 동일한 tasklet은 동시에 중복해서 실행되지 않음.
- * 이미 실행중인 경우 재차 스케줄링을 요청하게 됨.
- */
-tasklet_schedule(struct tasklet_struct * t);
-```
-
-### tasklet 삭제
-```C
-tasklet_kill(struct tasklet_struct * t);
-```
 
 ### Basic example
 ```C
@@ -47,6 +23,12 @@ void __exit ckun_exit(void);
 
 int param;
 
+/**
+ * DECLARE_TASKLET(name, func, data);
+ *      - name : 생성할 tasklet_struct 구조체의 이름.
+ *      - func : tasklet의 핸들러 함수
+ *      - data : tasklet handler에 전달될 인자의 주소. 즉 인자의 포인터.
+ */
 DECLARE_TASKLET(my_tasklet_s, tasklet_handler_fn, (unsigned long)&param);
 
 void tasklet_handler_fn(unsigned long data)
@@ -68,6 +50,10 @@ int __init ckun_init(void)
 
         param++;
 
+        /**
+         * 커널에 스케줄링을 요청. 동일한 tasklet은 동시에 중복해서 실행되지 않음.
+         * 이미 실행중인 경우 재차 스케줄링을 요청하게 됨.
+         */
         tasklet_schedule(&my_tasklet_s);
 
         return 0;
@@ -77,6 +63,7 @@ void __exit ckun_exit(void)
 {
         printk("data : %d\n", )         // 2
 
+        // tasklet 삭제
         tasklet_kill(&my_tasklet_s);
 
         return;
@@ -94,9 +81,9 @@ MODULE_AUTHOR("ckun");
 ## workqueue  
 일반적인 커널 스레드 형태로 동작하며, 기본 workqueue 를 사용할 수도 있고 직접 workqueue 를 생성할 수도 있다.  
 기본 workqueue 는 kevents/n(또는 kworker) 프로세스로 동작하며, 직접 생성하는 workqueue 도 일반 커널 스레드와 크게 다르지 않다. <U>다만 workqueue 는 프로세서 별로 스레드가 생성된다.</U>  
-workqueue 대신 일반 커널 스레드를 생성해도 작업에 제약은 없다.  
+workqueue 대신 일반 커널 스레드를 생성해도 작업에 제약은 없다.
 
-### 기본 workqueue 사용(keventd) 예시
+### 기본 workqueue 사용 예시
 ```C
 #include <linux/module.h>
 
@@ -198,7 +185,7 @@ module_exit(ckun_exit);
 ```
 
 ## 새로운 workqueue 생성
-생성`create_workqueue`, 소멸`destroy_workqueue`, 스케줄링`queue_work` 의 함수명만 다를뿐 기본 workqueue와 동일하다고 보면 된다.
+생성 `create_workqueue`, 소멸 `destroy_workqueue`, 스케줄링 `queue_work` 의 함수명만 다를뿐 기본 workqueue와 동일하다고 보면 된다.
 ```C
 #include <linux/module.h>
 
