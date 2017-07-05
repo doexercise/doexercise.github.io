@@ -2,15 +2,18 @@
 
 # ***Introduction***
 Linux Device Driver 제작에 대한 노트
-
+* [tasklet](#tasklet)
+* [workqueue](#workqueue)
+* [completion variable](#Completion_Variable)  
 <br />
 
 # ***Bottom half***
 Interrupt 처리를 전반부 처리(Top half)로 봤을 때 지연된 처리를 후반부 처리(Bottom half)라 하며, kernel 2.6 이후 이에 대한 구현은 softirq, [tasklet](#tasklet), [workqueue](#workqueue) 를 사용한다.
 
 ## tasklet
-tasklet은 softirq 로 구현되어있다. 그러나 거의 softirq 보다 tasklet으로 처리한다. 그리고 이것은 kernel 2.6 이전의 taskqueue와 관계가 없다. <br>
-workqueue에 비해 높은 우선순위를 가지며 휴면 상태로 전환될 일이 없으면 workqueue보다 tasklet으로 처리한다. 
+tasklet은 softirq 로 구현되어있다. 그러나 거의 softirq 보다 tasklet으로 처리한다. softirq 와 다르게 tasklet 은 실행의 직렬화를 보장한다. 즉 동일 tasklet 에서는 동기화가 필요하지 않다. <br> 
+workqueue에 비해 높은 우선순위를 가지며 휴면 상태로 전환될 일이 없으면 workqueue보다 tasklet으로 처리한다.<br>  
+그리고 이것은 kernel 2.6 이전의 taskqueue와 관계가 없다. 
 
 ### Basic example
 ```C
@@ -239,5 +242,73 @@ my_wq = create_singlethread_workqueue("ckun_work");
 ```
 
 <br>  
+
+
+## Completion Variable
+일종의 이벤트
+
+### Basic Example
+두개의 workqueue를 생성해서 첫번째 workqueue는 completion 대기하고
+두번째 workqueue는 완료이벤트 발생하는 예제이다.
+```C
+#include "ramdisk.h"
+
+void my_workqueue_fn(struct work_struct * ptr);
+int __init ckun_init(void);
+void __exit ckun_exit(void);
+
+struct workqueue_struct *my_wq1, *my_wq2;
+
+DECLARE_WORK(my_work1, my_workqueue_fn);
+DECLARE_WORK(my_work2, my_workqueue_fn);
+
+/**
+ * 정적 생성은 DECLARE_COMPLETION(name)
+ * 동적 생성은 init_completion(struct completion *)
+ */
+DECLARE_COMPLETION(my_comp);
+
+void my_workqueue_fn(struct work_struct * ptr)
+{
+        if (ptr == &my_work1) {
+                wait_for_completion(&my_comp);
+        }
+        else if (ptr == &my_work2) {
+                complete(&my_comp);
+        }
+
+        return;
+}
+
+int __init ckun_init(void)
+{
+        my_wq1 = create_singlethread_workqueue("ckun_work1");
+        my_wq2 = create_singlethread_workqueue("ckun_work2");
+
+        queue_work(my_wq1, &my_work1);
+        queue_work(my_wq2, &my_work2);
+
+        return 0;
+}
+
+void __exit ckun_exit(void)
+{
+        flush_workqueue(my_wq1);
+        flush_workqueue(my_wq2);
+
+        destroy_workqueue(my_wq1);
+        destroy_workqueue(my_wq2);
+
+        return;
+}
+
+module_init(ckun_init);
+module_exit(ckun_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("ckun");
+```
+
+<br>   
 
 ## [**Table of Contents**](../README.md)
