@@ -6,8 +6,7 @@
 <br />
 
 # ***printk***
-## 로그레벨 설정
-### 로그레벨은 다음과 같다. (kern_level.h)
+#### 로그레벨은 다음과 같다. (kern_level.h)
 ```
 KERN_EMERG(0), KERN_ALERT(1), KERN_CRIT(2), KERN_ERR(3),
 KERN_WARNING(4), KERN_NOTICE(5), KERN_INFO(6), KERN_DEBUG(7)
@@ -15,9 +14,9 @@ KERN_WARNING(4), KERN_NOTICE(5), KERN_INFO(6), KERN_DEBUG(7)
 
 
 
-### 다음 명령을 실행하면 몇가지 사항을 확인 할 수 있다.
+#### 다음 명령을 실행하면 몇가지 사항을 확인 할 수 있다.
 ```Shell
-root@u1604-61:~# cat /proc/sys/kernel/printk
+cat /proc/sys/kernel/printk
 4       4       1       7
 ```
 * 첫번째 숫자 : 현재 로그레벨
@@ -27,7 +26,7 @@ root@u1604-61:~# cat /proc/sys/kernel/printk
 
 
 
-### 다음 명령으로 설정을 변경 할 수 있다.
+#### 다음 명령으로 설정을 변경 할 수 있다.
 ```Shell
 echo 7 4 1 7 > /proc/sys/kernel/printk
 ```
