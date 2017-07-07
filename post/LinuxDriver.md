@@ -4,7 +4,7 @@
 Linux Device Driver 제작에 대한 노트
 * [tasklet](#tasklet)
 * [workqueue](#workqueue)
-* [completion variable](#completion-variable)  
+* [completion](#completion)  
 <br />
 
 # ***Bottom half***
@@ -244,14 +244,14 @@ my_wq = create_singlethread_workqueue("ckun_work");
 <br>  
 
 
-## Completion Variable
+## completion
 일종의 이벤트
 
 ### Basic Example
 두개의 workqueue를 생성해서 첫번째 workqueue는 completion 대기하고
 두번째 workqueue는 완료이벤트 발생하는 예제이다.
 ```C
-#include "ramdisk.h"
+#include <linux/module.h>
 
 void my_workqueue_fn(struct work_struct * ptr);
 int __init ckun_init(void);
