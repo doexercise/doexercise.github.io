@@ -29,7 +29,9 @@ root@localhost:~# echo 7 4 1 7 > /proc/sys/kernel/printk
 
 <br>
 
-출처 : <http://ok2513.tistory.com/9>, <http://blog.naver.com/PostView.nhn?blogId=agnazz&logNo=100122290010&parentCategoryNo=&categoryNo=40&viewDate=&isShowPopularPosts=false&from=postView>
+### 출처 : 
+ * <http://ok2513.tistory.com/9> 
+ * <http://blog.naver.com/PostView.nhn?blogId=agnazz&logNo=100122290010&parentCategoryNo=&categoryNo=40&viewDate=&isShowPopularPosts=false&from=postView>
 
 <br />
 
