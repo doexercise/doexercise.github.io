@@ -7,7 +7,7 @@ Javascript, Node.js
 
 # jQuery 예제 1
 ## 서버측(Node.js)
-```Javascript
+```JavaScript
 var http 	= require('http'),
     express 	= require('express'),
     bodyParser 	= require('body-parser');
@@ -46,7 +46,7 @@ var server = http.createServer(app).listen(3000, function(){
 ```
 
 ### 클라이언트 측(jQuery)
-```html
+```HTML
 <!DOCTYPE html>
 <html>
   <head>
