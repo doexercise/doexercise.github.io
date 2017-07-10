@@ -5,8 +5,8 @@ Javascript, Node.js
 
 <br />
 
-# jQuery 예제 1
-## 서버측(Node.js)
+## jQuery 예제 1
+### 서버 측(Node.js)
 ```JavaScript
 var http 	= require('http'),
     express 	= require('express'),
@@ -50,7 +50,7 @@ var server = http.createServer(app).listen(3000, function(){
 <!DOCTYPE html>
 <html>
   <head>
-    <!-- 이 파일은 /js/smoothie.js 에서 정적으로 제공되는 것이다. -->
+    <!-- 이 파일은 'express.static()'에 의해 /js/smoothie.js 에서 정적으로 제공 -->
     <script type="text/javascript" src="smoothie.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script type="text/javascript">
