@@ -2,9 +2,11 @@
 
 # ***Introduction***
 Linux Device Driver 제작에 대한 노트
-* [tasklet](#tasklet)
-* [workqueue](#workqueue)
+* [bottom half](#bottom-half)  
+  * [tasklet](#tasklet)
+  * [workqueue](#workqueue)
 * [completion](#completion)  
+* [debugging](#debugging)
 <br />
 
 # ***Bottom half***
@@ -244,7 +246,7 @@ my_wq = create_singlethread_workqueue("ckun_work");
 <br>  
 
 
-## completion
+# ***completion***
 일종의 이벤트
 
 ### Basic Example
@@ -310,5 +312,60 @@ MODULE_AUTHOR("ckun");
 ```
 
 <br>   
+
+# ***debugging***
+리눅스에서 커널 모듈 디버깅은 꽤 불편한 듯
+
+## Example 1  
+> 에러 메세지
+
+```
+[  120.908362] BUG: unable to handle kernel paging request at ffff881f339af408
+[  120.908412] IP: [<ffffffffc03a964b>] cleanup_module+0x17/0x9cc [ckun]
+<생략>
+[  120.909793] Call Trace:
+[  120.909814]  [<ffffffff81108705>] SyS_delete_module+0x1b5/0x210
+[  120.909849]  [<ffffffff81840b72>] entry_SYSCALL_64_fastpath+0x16/0x71
+```
+
+> `cleanup_module` 이게 뭐지? 난 이런 함수를 쓰지 않았는데?  
+
+kernel 2.4 이하에서는 `module_init`, `module_exit` 대신 `init_module`, `cleanup_module` 을 사용.   
+내 경우 `module_exit(ck_exit);` ->  `void __exit ck_exit(void);` 이 함수의 심볼이 `cleanup_module` 이다.
+
+> `cleanup_module+0x17/0x9cc` : cleanup_module 함수로부터 오프셋 0x17 지점에서 문제 발생.
+
+```
+// 0x17 지점은 아래그림에서 <+23> 이다.(16진수 -> 10진수)
+root@localhost:~# gdb ckun.ko
+(gdb) disassemble cleanup_module
+Dump of assembler code for function cleanup_module:
+   0x00000000000006cf <+0>:     push   %rbp
+   0x00000000000006d0 <+1>:     mov    %rsp,%rbp
+   0x00000000000006d3 <+4>:     push   %rbx
+   0x00000000000006d4 <+5>:     xor    %ebx,%ebx
+   0x00000000000006d6 <+7>:     cmp    %ebx,0x0(%rip)   # 0x6dc <cleanup_module+13>
+   0x00000000000006dc <+13>:    jle    0x6f9 <cleanup_module+42>
+   0x00000000000006de <+15>:    mov    0x0(,%rbx,8),%rax
+   0x00000000000006e6 <+23>:    mov    0x8(%rax),%rdi
+   0x00000000000006ea <+27>:    test   %rdi,%rdi
+   0x00000000000006ed <+30>:    je     0x6f4 <cleanup_module+37>
+   0x00000000000006ef <+32>:    callq  0x6f4 <cleanup_module+37>
+   0x00000000000006f4 <+37>:    inc    %rbx
+   0x00000000000006f7 <+40>:    jmp    0x6d6 <cleanup_module+7>
+   0x00000000000006f9 <+42>:    mov    $0x0,%rdi
+   0x0000000000000700 <+49>:    callq  0x705 <cleanup_module+54>
+   0x0000000000000705 <+54>:    callq  0x70a <cleanup_module+59>
+   0x000000000000070a <+59>:    mov    $0x0,%rdi
+   0x0000000000000711 <+66>:    callq  0x716 <cleanup_module+71>
+   0x0000000000000716 <+71>:    pop    %rbx
+   0x0000000000000717 <+72>:    pop    %rbp
+   0x0000000000000718 <+73>:    retq
+End of assembler dump.
+```
+
+> 여기서는 다른 함수에서 변수를 초기화 하면서 `p = (void *)a` 라고 해야 할 것을 `p = (void *)&a` 라고 하여 전혀 다른 위치를 참조하고 있었고, 결국 모듈 제거시 에러 발생
+
+<br>
 
 ## [**Table of Contents**](../README.md)
