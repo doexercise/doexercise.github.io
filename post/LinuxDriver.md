@@ -120,7 +120,7 @@ int __init ckun_init(void)
 void __exit ckun_exit(void)
 {
         // 스케줄링 된 모든 작업이 종료될 때까지 반환하지 않음
-        // 작업 취소는 schedule_delayed_work() 사용
+        // schedule_delayed_work()에 대한 작업취소는 cancel_delayed_work() 사용
         flush_scheduled_work();
 
         return;
@@ -366,6 +366,53 @@ End of assembler dump.
 
 > 여기서는 다른 함수에서 변수를 초기화 하면서 `p = (void *)a` 라고 해야 할 것을 `p = (void *)&a` 라고 하여 전혀 다른 위치를 참조하고 있었고, 결국 모듈 제거시 에러 발생
 
-<br>
+<br />
+
+# ***proc***
+proc 파일 시스템
+
+## umode_t
+* proc_create() 함수원형, linux/proc_fs.h
+
+	```C
+	static inline struct proc_dir_entry *proc_create(
+	         const char *name, 
+	         umode_t mode, 
+	         struct proc_dir_entry *parent,
+	         const struct file_operations *proc_fops
+	);
+	```  
+
+* 보통 `proc_create("hello", 0, NULL, &proc_fops);` 사용. mode 가 0이면 permission 0444 로 설정됨. 물론 `proc_create("hello", 0444, NULL, &proc_fops);` 라고 해도 됨
+<https://stackoverflow.com/questions/28664971/why-is-does-proc-create-mode-argument-0-correspond-to-0444>
+
+* 퍼미션에 대한 정의, linux/stat.h (uapi/linux/stat.h)
+	```C
+	 #define S_IRWXU 00700	// R + W + X => user
+	 #define S_IRUSR 00400	// R only
+	 #define S_IWUSR 00200	// W only
+	 #define S_IXUSR 00100	// X only
+	
+	 #define S_IRWXG 00070	// R + W + X => group
+	 #define S_IRGRP 00040
+	 #define S_IWGRP 00020
+	 #define S_IXGRP 00010
+	
+	 #define S_IRWXO 00007	// R + W + X => other
+	 #define S_IROTH 00004
+	 #define S_IWOTH 00002
+	 #define S_IXOTH 00001
+	 ```
+
+* 파일 형식에 대한 정의, linux/stat.h (uapi/linux/stat.h)
+	> S_IFREG  : 일반 파일  
+	> S_IFCHR  : 문자 파일  
+	> S_IFBLK  : 블럭 파일  
+	> S_IFSOCK : Unix Domain Sock 파일    
+	<U>단, proc 파일은 S_IFREG 이외에는 지정할 수 없고 따라서 별도로 지정할 필요도 없다.</U>
+
+	출처 <https://www.joinc.co.kr/w/man/2/mknod>
+
+<br />
 
 ## [**Table of Contents**](../README.md)
