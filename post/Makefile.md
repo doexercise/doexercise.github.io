@@ -51,4 +51,13 @@ Makefile에 대한 사항들을 정리하기 위한 페이지이다.
 
 <br />
 
+### warning
+* 기본적으로 모든 warning 이 활성화 되어 있나? Makefile 에서 특정 warning 을 끄고 싶으면 아래와 같이 한다.
+	```Makefile  
+	ccflags-y      := -Wno-unused-variable
+	```
+* 모든 warning 을 끄고 싶으면 `-w` 옵션을 준다.
+
+<br />
+
 ## [**Table of Contents**](../README.md)
