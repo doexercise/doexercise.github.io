@@ -383,8 +383,14 @@ proc 파일 시스템
 	);
 	```  
 
+<br>
+
 * 보통 `proc_create("hello", 0, NULL, &proc_fops);` 사용. mode 가 0이면 permission 0444 로 설정됨. 물론 `proc_create("hello", 0444, NULL, &proc_fops);` 라고 해도 됨
-<https://stackoverflow.com/questions/28664971/why-is-does-proc-create-mode-argument-0-correspond-to-0444>
+	```
+	출처 : 	<https://stackoverflow.com/questions/28664971/why-is-does-proc-create-mode-argument-0-correspond-to-0444>
+	```
+
+<br>
 
 * 퍼미션에 대한 정의, linux/stat.h (uapi/linux/stat.h)
 	```C
@@ -404,15 +410,180 @@ proc 파일 시스템
 	 #define S_IXOTH 00001
 	 ```
 
+<br>
+
 * 파일 형식에 대한 정의, linux/stat.h (uapi/linux/stat.h)
 	> S_IFREG  : 일반 파일  
 	> S_IFCHR  : 문자 파일  
 	> S_IFBLK  : 블럭 파일  
 	> S_IFSOCK : Unix Domain Sock 파일    
-	<U>단, proc 파일은 S_IFREG 이외에는 지정할 수 없고 따라서 별도로 지정할 필요도 없다.</U>
+	> <U>단, proc 파일은 S_IFREG 이외에는 지정할 수 없고 따라서 별도로 지정할 필요도 없다.</U>
 
+	```
 	출처 <https://www.joinc.co.kr/w/man/2/mknod>
+	```
 
 <br />
+
+## proc 생성/삭제
+```C
+const char *name = "ckun";
+umode_t mode = 0444;
+struct proc_dir_entry *parent;
+struct proc_dir_entry *child;
+struct file_operations fops = {
+	.owner	= THIS_MOUDLE,
+	.open	= proc_open_fn,
+	.read 	= proc_read_fn,
+	.write	= proc_write_fn,
+};
+
+// 두번째 인자에 NULL을 전달하면 /proc 밑에 디렉토리를 생성한다. /proc/ckun
+parent = proc_mkdir("ckun", NULL);
+
+// 위에서 생성한 디렉토리를 부모로 하는 파일이 생성된다. /proc/ckun/ckun1
+child = proc_create("ckun1", 0444, parent, &fops);
+```
+```C
+// /proc/ckun 을 삭제한다.
+remove_proc_entry("ckun", NULL);
+```
+```C
+// /proc/ckun/ckun1 을 삭제한다.
+remove_proc_entry("ckun1", parent);
+```
+```C
+// /proc/ckun 이하 모든 것을 삭제한다.
+remove_proc_subtree("ckun", NULL);
+```
+
+<br>
+
+## proc_create() vs proc_create_data()
+proc_create_data 는 void *data 인자를 하나 더 받는다. proc_create 는 마지막 인자를 NULL로 하여 proc_create_data 를 호출하는 wrapper 일 뿐이다.
+```C
+proc_create_data(char *name, 
+		umode_t mode, 
+		struct proc_dir_entry *parent, 
+		struct file_operations *fops, 
+		void *data);
+```
+
+<br>
+
+## 장치별로 개별 데이터 전달하기
+예를 들어, 아래와 같이 proc를 구성했다고 할때 개별 데이터를 보관하기 위한 방법을 알아보자
+```
+/proc ── ckun  ─┬─ dev1  
+		├─ dev2  
+      		└─ dev3  
+```
+
+```C
+// 장치별 개별 데이터(보통은 이렇게 정적으로 생성하지 않고 probe 단계에서 kmalloc 한다)
+struct my_contents_t my_contents[3];
+```
+```C
+// 디렉토리 및 파일 생성. 참고로 read/write 모두 .open 함수가 먼저 실행된다.
+struct file_operations fops = {
+	.owner	= THIS_MOUDLE,
+	.open	= proc_open_fn,
+	.read	= proc_read_fn,
+	.write	= proc_write_fn,
+};
+parent = proc_mkdir("ckun", NULL);
+proc_create_data("dev1", 0444, parent, &fops, &my_contents[0]);
+proc_create_data("dev2", 0444, parent, &fops, &my_contents[1]);
+proc_create_data("dev3", 0444, parent, &fops, &my_contents[2]);
+```
+```C
+/**
+ * single_open 함수를 통해 seq_file 구조체를 생성하고 seq_fn 함수 호출.
+ * PDE_DATA 매크로는 inode 로 부터 proc_create_data() 에서 지정했던
+ * void *data 주소를 가져온다. 
+ * 물론 proc_create()로 생성하고 이곳에서 직접 void *data 를 설정할 수도 있다. 
+ * 그러나 그렇게 하려면 dev1, dev2, dev3 이 모두 다른 callback 함수를 사용해야 
+ * 어떤 장치에 대한 호출인지 알 수 있을거다.
+ */
+int proc_open_fn(struct inode *inode, struct file *file)
+{
+	return single_open(file, seq_fn, PDE_DATA(inode));
+}
+
+/**
+ * 앞서 언급했듯이 read/write 모두 이 함수가 호출이 된다. 
+ * read에 대한 콜백함수를 사용자가 직접 작성하지 않을 수 있고, 
+ * 이 경우 .read = seq_read 로 설정해야 하는데,
+ * 이렇게 설정된 경우에는 seq_print() 를 통해 사용자 화면(터미널)에
+ * 필요한 내용을 출력할 수 있다. 
+ * 즉, read 의 경우 .open 만 직접 작성하고 .read = seq_read 로 설정하면
+ * 충분히 목적한 바를 사용자에게 전달할 수 있다.
+ * 반대로, read 함수를 직접 작성하여 지정한 경우 seq_printf()는 화면에 출력하지 않는다.
+ * write 의 경우에는 기본 함수가 무엇인지 확인이 안된다. seq_write()는 함수원형이 다름.
+ */
+int seq_fn(struct seq_file *m, void *v)
+{
+	// 앞서 지정한 void *data는 다음과 같이 가져올 수 있다.
+	struct my_contents *p = (struct my_contents *)m->private;
+
+	// 이 예제에서는 .read 를 직접 지정하였기 때문에
+	// seq_printf() 는 화면에 내용을 출력하지 않는다.
+	seq_printf(m, "hi proc\n");
+	seq_printf(m, "Data : %d\n", p->cnt);
+	return 0;
+}
+
+/**
+ * single_open() 을 사용하지 않았거나, void *data 를 지정하지 않은 경우 
+ * seq_file * 를 설정하는 부분에서 oops 발생함.
+ * .read 콜백은 처리한 데이터 사이즈를 리턴해야 데이터 전달이 수행되고, 
+ * 0을 리턴해야 종료된다. 0 이외의 값(0보다 큰?)을 리턴하면 계속 호출된다.
+ * 따라서 ret 값을 static 으로 선언하고 첫번째 호출시에는 처리한 데이터의 크기를 리턴하고
+ * 다시 호출되었을때 0을 리턴함으로써 작업을 종료시킨다.
+ * read 함수 참고 : https://blog.nyanpasu.me/a-proc-file-example/
+ */
+ssize_t proc_read_fn(struct file *file, char __user *buf, size_t size, loff_t *ppos)
+{
+	// 앞서 지정한 void *data 를 가져오는 방법
+	struct seq_file *m = (struct seq_file *)file->private_data;
+	struct my_contents *p = m->private;
+
+	static int ret = 0;
+	if (ret == 0) {
+		copy_to_user(buf, p, sizeof(*p));
+		ret = sizeof(*p);
+	} else {
+		ret = 0;
+	}
+
+	return ret;
+}
+
+/**
+ * write의 경우 "echo 1 > /proc/ckun/dev1" 처럼 사용되는 경우를 가정해 보았다.
+ * read 의 경우와 다르게 전달받은 데이터 크기를 리턴함으로써 함수는 종료된다.
+ */
+ssize_t proc_write_fn(struct file *file, const char __user *buf, size_t size, loff_t *ppos)
+{
+	struct seq_file *m = (struct seq_file *)file->private_data;
+	char *p = m->private;
+
+	// for preventing buffer overrun
+	if (size > BUFFER_SIZE) 
+		size = BUFFER_SIZE - 1;
+
+	copy_from_user(p, buf, size);
+	if (p[size-1] == '\n')
+		p[size-1] = '\0';
+	else 
+		p[size] = '\0';
+
+	printk("Data : %s\n", p);
+
+	return size;
+}
+```
+
+<br>
 
 ## [**Table of Contents**](../README.md)
