@@ -1,12 +1,14 @@
 <p align="right"><a href="https://doexercise.github.io">Table of Contents</a></p>  
 
 # ***Introduction***
-Linux Device Driver 제작에 대한 노트
-* [bottom half](#bottom-half)  
-  * [tasklet](#tasklet)
-  * [workqueue](#workqueue)
-* [completion](#completion)  
-* [debugging](#debugging)
+Linux Device Driver 제작에 대한 노트  
+* [**bottom half**](#bottom-half)      
+  * [tasklet](#tasklet)     
+  * [workqueue](#workqueue)    
+* [**completion**](#completion)  
+* [**debugging**](#debugging)  
+* [**proc**](#proc)
+
 <br />
 
 # ***Bottom half***
@@ -333,10 +335,11 @@ MODULE_AUTHOR("ckun");
 kernel 2.4 이하에서는 `module_init`, `module_exit` 대신 `init_module`, `cleanup_module` 을 사용.   
 내 경우 `module_exit(ck_exit);` ->  `void __exit ck_exit(void);` 이 함수의 심볼이 `cleanup_module` 이다.
 
-> `cleanup_module+0x17/0x9cc` : cleanup_module 함수로부터 오프셋 0x17 지점에서 문제 발생.
+<br>
+
+> `cleanup_module+0x17/0x9cc` : cleanup_module 함수로부터 오프셋 0x17 지점에서 문제 발생. 0x17 지점은 아래그림에서 <+23> 이다.(16진수 -> 10진수)
 
 ```
-// 0x17 지점은 아래그림에서 <+23> 이다.(16진수 -> 10진수)
 root@localhost:~# gdb ckun.ko
 (gdb) disassemble cleanup_module
 Dump of assembler code for function cleanup_module:
@@ -363,6 +366,8 @@ Dump of assembler code for function cleanup_module:
    0x0000000000000718 <+73>:    retq
 End of assembler dump.
 ```
+
+<br>
 
 > 여기서는 다른 함수에서 변수를 초기화 하면서 `p = (void *)a` 라고 해야 할 것을 `p = (void *)&a` 라고 하여 전혀 다른 위치를 참조하고 있었고, 결국 모듈 제거시 에러 발생
 
@@ -417,11 +422,8 @@ proc 파일 시스템
 	> S_IFCHR  : 문자 파일  
 	> S_IFBLK  : 블럭 파일  
 	> S_IFSOCK : Unix Domain Sock 파일    
-	> <U>단, proc 파일은 S_IFREG 이외에는 지정할 수 없고 따라서 별도로 지정할 필요도 없다.</U>
-
-	```
-	출처 <https://www.joinc.co.kr/w/man/2/mknod>
-	```
+	> <U>단, proc 파일은 S_IFREG 이외에는 지정할 수 없고 따라서 별도로 지정할 필요도 없다.</U>  
+	> 출처 : <https://www.joinc.co.kr/w/man/2/mknod>
 
 <br />
 
@@ -565,8 +567,10 @@ ssize_t proc_read_fn(struct file *file, char __user *buf, size_t size, loff_t *p
  */
 ssize_t proc_write_fn(struct file *file, const char __user *buf, size_t size, loff_t *ppos)
 {
-	struct seq_file *m = (struct seq_file *)file->private_data;
-	char *p = m->private;
+        // proc_read_fn() 에서와 달리 이렇게 해도 된다.
+        // 결국 file 에서 inode 를 찾고, inode에서 proc_dir_entry,
+        // 최종적으로 proc_dir_entry 의 data 멤버를 리턴하는 것.
+	char *p = (char *)PDE_DATE(file_inode(file));
 
 	// for preventing buffer overrun
 	if (size > BUFFER_SIZE) 
