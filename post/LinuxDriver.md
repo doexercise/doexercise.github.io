@@ -391,9 +391,8 @@ proc 파일 시스템
 <br>
 
 * 보통 `proc_create("hello", 0, NULL, &proc_fops);` 사용. mode 가 0이면 permission 0444 로 설정됨. 물론 `proc_create("hello", 0444, NULL, &proc_fops);` 라고 해도 됨
-	```
-	출처 : 	<https://stackoverflow.com/questions/28664971/why-is-does-proc-create-mode-argument-0-correspond-to-0444>
-	```
+* 출처 : <https://stackoverflow.com/questions/28664971/why-is-does-proc-create-mode-argument-0-correspond-to-0444>
+
 
 <br>
 

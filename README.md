@@ -1,5 +1,5 @@
 ## Table of Contents
-* [How to use Makefile](post/about_makefile.md)
+* [How to use Makefile](post/Makefile.md)
 * [Structured Exception Handling](post/StructuredExceptionHandling.md)
 * [Windows Device Driver](post/WindowsDriver.md)
 * [Linux Device Driver](post/LinuxDriver.md)
