@@ -8,6 +8,7 @@ Linux Device Driver 제작에 대한 노트
 * [**completion**](#completion)  
 * [**debugging**](#debugging)  
 * [**proc**](#proc)
+* [**kthread**](#kthread)
 
 <br />
 
@@ -586,6 +587,73 @@ ssize_t proc_write_fn(struct file *file, const char __user *buf, size_t size, lo
 	return size;
 }
 ```
+
+<br>
+
+# ***kthread***
+## Basic Example
+```C
+#include <linux/module.h>
+#include <linux/kthread.h>
+#include <linux/delay.h>
+
+struct task_struct *task;
+int param;
+
+int kthread_fn(void * data)
+{
+        int *p = (int *)data;
+
+        *p = 0;
+        while (*p < 10) {
+                printk("[%d] kthread called\n", (*p)++);
+                msleep(1000);
+                if (kthread_should_stop())
+                        break;
+        }
+
+        printk("thread ends\n");
+        task = NULL;
+
+        return 0;
+}
+
+int __init ckun_init(void)
+{
+        task = kthread_create(kthread_fn, &param, "ckun");
+
+        if (!task)
+                printk("Fail to create kthread\n");
+        else
+                wake_up_process(task);
+
+        return 0;
+}
+
+void __exit ckun_exit(void)
+{
+        if (task)
+                kthread_stop(task);
+        
+        return;
+}
+
+module_init(ckun_init);
+module_exit(ckun_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("ckun");
+```
+
+## Remarks
+위의 예에서, 작업 스레드가 종료되는 경우는 두가지이다. 하나는 메인 스레드가 `kthread_stop()`를 호출 후 대기하고 작업스레드는 `kthread_should_stop()`으로 확인하고 루프를 탈출하고 종료되는 경우이며, 다른 하나는 작업스레드가 루프를 10회 돌고 스스로 종료 되는 경우이다.  
+위와 같은 상황에서 다음 두가지 모두 kernel crash가 발생한다.
+* 작업스레드가 종료되지 않은 상태에서 메인스레드가 종료되는 경우
+* 작업스레드가 이미 종료되었는데 메인스레드에서 `kthread_stop()`을 호출한 경우
+
+작업스레드가 이미 종료된 경우 task->state 로 체크를 할 수가 없다.(나중에 값을 체크해보면 쓰레기 값이 찍히고 이건 아마도 리소스가 정상적으로 해제되었다는 의미이겠다) 따라서 다음의 두가지 방법 중 한가지를 택해야 할 것이다.
+* 작업스레드가 스스로 종료하거나, 반대로 메인스레드에 의해서만 종료되도록 한다.
+* 위 샘플 코드 처럼 작업스레드 종료시 어떠한 표시(task = NULL)를 하여 메인스레드에서 알 수 있게 한다.
 
 <br>
 
