@@ -2,12 +2,12 @@
 
 # ***Introduction***
 기타 정리할 내용들  
-* [**printk()**](#printk()-log-level)
-* [**Variadic Macro**](#Variadic-Macro)
-* [**How to access FPGA on Zynq**](#How-to-access-FPGA-on-Zynq)
+* [**printk()**](#printk-log-level)
+* [**Variadic Macro**](#variadic-macro)
+* [**How to access FPGA on Zynq**](#how-to-access-fpga-on-zynq)
 <br />
 
-# ***printk() log level***
+# ***printk log level***
 ### 로그레벨 (kern_level.h)
 ```
 KERN_EMERG(0), KERN_ALERT(1), KERN_CRIT(2), KERN_ERR(3),
