@@ -1,8 +1,10 @@
 <p align="right"><a href="https://doexercise.github.io">Table of Contents</a></p>  
 
 # ***Introduction***
-기타 정리할 내용들
-
+기타 정리할 내용들  
+* [**printk()**](#printk()-log-level)
+* [**Variadic Macro**](#Variadic-Macro)
+* [**How to access FPGA on Zynq**](#How-to-access-FPGA-on-Zynq)
 <br />
 
 # ***printk() log level***
@@ -56,6 +58,128 @@ root@localhost:~# echo 7 4 1 7 > /proc/sys/kernel/printk
         "ckun(%s, %d): " fmt, __FUNCTION__, __LINE__, __VA_ARGS__)
 ```
 
+<br>
+
+# ***How to access FPGA on Zynq***
+### Sample Code
+```C
+/**
+* Refer to following links :
+*       http://svenand.blogdrives.com/files/gpio-dev-mem-test.c
+*       http://www.wiki.xilinx.com/Linux+User+Mode+Pseudo+Driver
+*       https://forums.xilinx.com/t5/Zynq-All-Programmable-SoC/how-to-read-write-from-to-a-register-in-Linux/td-p/581391
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+
+#define GPIO_BASE_ADDRESS       0x41200000
+#define MAP_SIZE                0x10000UL       // 64k
+#define MAP_MASK                (MAP_SIZE -1)
+#define LED                     0x01
+
+int main(int argc, char ** argv)
+{
+        volatile void *mapped_base, *mapped_dev_base;
+        int fd  = 0;
+        int val = 0;
+        int i   = 0;
+        int c   = 0;
+
+        int offset = 0;
+        int channel_id = 1;
+        int interval = 500;
+        int count = 100;
+
+
+        while ((c = getopt(argc, argv, "c:i:n:h")) != -1) {
+                switch(c) {
+                case 'c':
+                        channel_id = atoi(optarg);
+                        if (channel_id != 1 && channel_id != 2) {
+                                printf("Invalid channel id\n");
+                                channel_id = 1;
+                        }
+                        break;
+
+                case 'i':
+                        interval = atoi(optarg);
+                        if (interval < 10 || interval > 3000) {
+                                printf("Invalid interval\n");
+                                interval = 500;
+                        }
+                        break;
+
+                case 'n':
+                        count = atoi(optarg);
+                        if (count < 1) {
+                                printf("Invalid count\n");
+                                count = 100;
+                        }
+                        break;
+
+                case 'h':
+                case '?':
+                        printf("Usage :                                         \n");
+                        printf("        -c      channel id (1 or 2)             \n");
+                        printf("        -i      interval (10 <= i <= 3000)      \n");
+                        printf("                millisecond                     \n");
+                        printf("        -n      repeat count (0 < c)            \n");
+                        printf("        -h      this screen                     \n");
+                        printf("                                                \n");
+                        printf("        default c = 1                           \n");
+                        printf("                i = 500                         \n");
+                        printf("                n = 100                         \n");
+                        return -1;
+                }
+        }
+
+        offset = (channel_id == 1) ? 0 : 8;
+
+        fd = open("/dev/mem", O_RDWR | O_SYNC);
+        if (fd < 1) {
+                perror("Not found /dev/mem");
+                return -1;
+        }
+
+        mapped_base = mmap(NULL, MAP_SIZE, PROT_WRITE | PROT_READ, MAP_SHARED,
+                                fd, (GPIO_BASE_ADDRESS + offset) & ~MAP_MASK);
+        if (mapped_base == MAP_FAILED) {
+                perror("mmap");
+                goto EXIT;
+        }
+
+        mapped_dev_base = mapped_base + (GPIO_BASE_ADDRESS & MAP_MASK);
+        printf("dev base addr : 0x%p\n", mapped_dev_base);
+
+        while (i < count) {
+                val = *((unsigned *)(mapped_dev_base + 0));
+
+                if (val & LED) {
+                        *((unsigned *)(mapped_dev_base + 0)) = val & ~LED;
+
+                }
+                else {
+                        *((unsigned *)(mapped_dev_base + 0)) = val | LED;
+                }
+
+                printf("(%5d) val       : %d\n", i++, val);
+                usleep(interval * 1000);
+        }
+
+        if (munmap(mapped_base, MAP_SIZE) == MAP_FAILED) {
+                perror("unmap");
+                goto EXIT;
+        }
+
+EXIT:
+        close(fd);
+        return 0;
+}
+```
 <br>
 
 ## [**Table of Contents**](../README.md)
