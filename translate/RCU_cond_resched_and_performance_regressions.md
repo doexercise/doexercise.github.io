@@ -3,27 +3,25 @@
 **By Jonathan Corbet June 24, 2014**  
 
 Performance regressions are a constant problem for kernel developers. A seemingly innocent change might cause a significant performance degradation, but only for users and workloads that the original developer has no access to. Sometimes these regressions can lurk for years until the affected users update their kernels and notice that things are running more slowly. The good news is that the development community is responding with more testing aimed at detecting performance regressions. This testing found a classic example of this kind of bug in 3.16; the bug merits a look as an example of how hard it can be to keep things working optimally for a wide range of users.
-```
-성능 저하(regression)는 커널 개발자에게 지속적인 고민거리입니다. 겉으로 보기에는 아무런 문제 없는 변경이 성능저하를 유발할 수도 있지만, 이것은 원래의 개발자가 고려하지 않았던 사용자 및 작업에 대해서만 그렇습니다. 때로는 이 변경에 영향을 받는 사용자가 커널을 업데이트하고 나서 성능이 느려졌음을 인지하기 전까지 이러한 성능저하는 수 년간 숨겨져 있을 수도 있습니다. 다행히도 개발 커뮤니티는 성능 저하를 감지하기 위해 많은 테스트하고 있습니다. 이번 테스트는 3.16 버전에서 이런 종류의 버그에 대한 전형적인 예를 찾았습니다. 이 버그는 다양한 사용자들에 대하여 최적의 상태로 동작하도록 유지하는 것이 얼마나 힘든지를 보여주는 예가 될 수 있습니다.
-```
+
+> 성능 저하(regression)는 커널 개발자에게 지속적인 고민거리입니다. 겉으로 보기에는 아무런 문제 없는 변경이 성능저하를 유발할 수도 있지만, 이것은 원래의 개발자가 고려하지 않았던 사용자 및 작업에 대해서만 그렇습니다. 때로는 이 변경에 영향을 받는 사용자가 커널을 업데이트하고 나서 성능이 느려졌음을 인지하기 전까지 이러한 성능저하는 수 년간 숨겨져 있을 수도 있습니다. 다행히도 개발 커뮤니티는 성능 저하를 감지하기 위해 많은 테스트하고 있습니다. 이번 테스트는 3.16 버전에서 이런 종류의 버그에 대한 전형적인 예를 찾았습니다. 이 버그는 다양한 사용자들에 대하여 최적의 상태로 동작하도록 유지하는 것이 얼마나 힘든지를 보여주는 예가 될 수 있습니다.
+
 
 ## The birth of a regression
 The kernel's read-copy-update (RCU) mechanism enables a great deal of kernel scalability by facilitating lock-free changes to data structures and batching of cleanup operations. A fundamental aspect of RCU's operation is the detection of "quiescent states" on each processor; a quiescent state is one in which no kernel code can hold a reference to any RCU-protected data structure. Initially, quiescent states were defined as times when the processor was running in user space, but things have gotten rather more complex since then. (See LWN's lengthy list of RCU articles for lots of details on how this all works).  
-```
-성능저하의 탄생
 
-커널의 RCU (read-copy-update) 메커니즘은 데이터 구조에 대한 잠금 없는 변경을 용이하게 하고 정리 작업을 일괄 처리함으로써 많은 커널 확장성을 가능하게 합니다. RCU 동작의 기본은 각 프로세서에서 "정지 상태"를 감지하는 것입니다. "정지 상태"는 커널 코드가 RCU로 보호 된 데이터 구조를 참조할 수없는 상태입니다. 처음에 "정지 상태"는 프로세서가 사용자 공간에서 실행되는 시간으로 정의되었지만 그 이후로 상황은 다소 복잡해졌습니다. (이 모든 것이 어떻게 작동하는지에 대한 자세한 내용은 LWN의 긴 RCU 기사 목록을 참조하십시오).
-```
+> 커널의 RCU (read-copy-update) 메커니즘은 데이터 구조에 대한 잠금 없는 변경을 용이하게 하고 정리 작업을 일괄 처리함으로써 많은 커널 확장성을 가능하게 합니다. RCU 동작의 기본은 각 프로세서에서 "정지 상태"를 감지하는 것입니다. "정지 상태"는 커널 코드가 RCU로 보호 된 데이터 구조를 참조할 수없는 상태입니다. 처음에 "정지 상태"는 프로세서가 사용자 공간에서 실행되는 시간으로 정의되었지만 그 이후로 상황은 다소 복잡해졌습니다. (이 모든 것이 어떻게 작동하는지에 대한 자세한 내용은 LWN의 긴 RCU 기사 목록을 참조하십시오).
+
 
 The kernel's full tickless mode, which is only now becoming ready for serious use, can make the detection of quiescent states more difficult. A CPU running in the tickless mode will, due to the constraints of that mode, be running a single process. If that process stays within the kernel for a long time, no quiescent states will be observed. That, in turn, prevents RCU from declaring the end of a "grace period" and running the (possibly lengthy) set of accumulated RCU callbacks. Delayed grace periods can result in excessive latencies elsewhere in the kernel or, if things go really badly, out-of-memory problems.
-```
-커널의 완전한 틱리스 모드는, 이제와서야 제대로 사용할 만큼의 준비가 되어 있지만, 정지 상태를 감지하기 더 어렵게 할 수 있습니다. 틱리스 모드에서 실행중인 CPU는 해당 모드의 제약으로 인해 단일 프로세스를 실행합니다. 그 프로세스가 오랜 시간 동안 커널 내에 남아 있다면 정지 상태는 관찰되지 않습니다. 이는 차례로 RCU가 "유예 기간"의 끝을 선언하고 누적 된 RCU 콜백 세트 (길게 나타날 수 있음)를 실행하는 것을 방지합니다. 지연된 유예 기간은 커널의 다른 곳에서 과도한 대기 시간을 초래할 수 있으며, 상황이 심각하게 악화되면 메모리 부족 문제가 발생할 수 있습니다.
-```
+
+> 커널의 완전한 틱리스 모드는, 이제와서야 제대로 사용할 만큼의 준비가 되어 있지만, 정지 상태를 감지하기 더 어렵게 할 수 있습니다. 틱리스 모드에서 실행중인 CPU는 해당 모드의 제약으로 인해 단일 프로세스를 실행합니다. 그 프로세스가 오랜 시간 동안 커널 내에 남아 있다면 정지 상태는 관찰되지 않습니다. 이는 차례로 RCU가 "유예 기간"의 끝을 선언하고 누적 된 RCU 콜백 세트 (길게 나타날 수 있음)를 실행하는 것을 방지합니다. 지연된 유예 기간은 커널의 다른 곳에서 과도한 대기 시간을 초래할 수 있으며, 상황이 심각하게 악화되면 메모리 부족 문제가 발생할 수 있습니다.
+
 
 One might argue (as some developers did) that code that loops in the kernel in this way already has serious problems. But such situations do come about. Eric Dumazet mentioned one: a process calling exit() when it has thousands of sockets open. Each of those open sockets will result in structures being freed via RCU; that can lead to a long list of work to be done while that same process is still closing sockets and, thus, preventing RCU processing by looping in the kernel.
-```
-이런 방식으로 커널에서 루프하는 코드는 이미 심각한 문제가 있다고 주장 할 수도 있습니다 (일부 개발자들도 그렇듯이). 그러나 그러한 상황이 발생합니다. Eric Dumazet은 수천 개의 소켓이 열려있을 때 exit()를 호출하는 프로세스를 언급했습니다. 각각의 열린 소켓은 구조가 RCU를 통해 해제되도록합니다. 이는 동일한 프로세스가 여전히 소켓을 닫고 커널에서 루핑하여 RCU 처리를 방해하는 동안 수행해야 할 긴 작업 목록을 가져올 수 있습니다.
-```
+
+> 이런 방식으로 커널에서 루프하는 코드는 이미 심각한 문제가 있다고 주장 할 수도 있습니다 (일부 개발자들도 그렇듯이). 그러나 그러한 상황이 발생합니다. Eric Dumazet은 수천 개의 소켓이 열려있을 때 exit()를 호출하는 프로세스를 언급했습니다. 각각의 열린 소켓은 구조가 RCU를 통해 해제되도록합니다. 이는 동일한 프로세스가 여전히 소켓을 닫고 커널에서 루핑하여 RCU 처리를 방해하는 동안 수행해야 할 긴 작업 목록을 가져올 수 있습니다.
+
 
 RCU developer Paul McKenney put together a solution to this problem based on a simple insight: the kernel already has a mechanism for allowing other things to happen while some sort of lengthy operation is in progress. Code that is known to be prone to long loops will, on occasion, call cond_resched() to give the scheduler a chance to run a higher-priority process. In the tickless situation, there will be no higher-priority process, though, so, in current kernels, cond_resched() does nothing of any use in the tickless mode.
 
