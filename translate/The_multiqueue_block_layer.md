@@ -37,7 +37,6 @@ In the current patch set, the multiqueue mode is offered in addition to the exis
 This patch set has been significantly reworked in the last month or so; it has gone from a relatively messy series into something rather cleaner. Merging into the mainline would thus appear to be on the agenda for the near future. Since use of this API is optional, existing drivers should continue to work and this merge could conceivably happen as early as 3.11. But, given that the patch set has not yet been publicly posted to any mailing list and does not appear in linux-next, 3.12 seems like a more likely target. Either way, Linux seems likely to have a much better block layer by the end of the year or so.
 > 이 패치 세트는 지난 한 달 정도 크게 수정 되었습니다. 비교적 지저분한 시리즈에서 다소 깨끗한 것으로 변했습니다. 따라서 본선에 합병하면 가까운 장래에 의제로 등장 할 것입니다. 이 API의 사용은 선택 사항이므로 기존 드라이버는 계속 작동해야하며 이 병합은 3.11 버전에서 발생할 수 있습니다. 그러나 패치 세트가 공개적으로 메일 링리스트에 게시되지 않았고 linux-next에 나타나지 않는다면 3.12가 더 가능성있는 타겟으로 보입니다. 어느 쪽이든, 리눅스는 연말까지 훨씬 더 나은 블록 레이어를 가질 것으로 보입니다.
 
-
 * ***Original text***  <https://lwn.net/Articles/603252/>
 * ***Translation Date*** 2018/05/21
 * Google Translator helped me.
