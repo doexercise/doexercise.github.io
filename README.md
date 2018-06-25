@@ -8,6 +8,12 @@
 
 <br />
 
+* Translate
+  - [RCU_cond_resched_and_performance_regressions](translate/RCU_cond_resched_and_performance_regressions.md)
+  - [The_multiqueue_block_layer](translate/The_multiqueue_block_layer.md)
+
+<br />
+
 > **My Blog** : [https://doexercise.github.io/][Blog]  
 > **My Github** : [https://github.com/doexercise/][Home]  
 > **Blog Source** : [https://github.com/doexercise/doexercise.github.io/][BlogSrc]
