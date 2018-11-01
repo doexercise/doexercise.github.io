@@ -1,0 +1,47 @@
+** Default Environment **
+
+Marvell>> pri
+baudrate=115200
+bootargs=console=ttyS0,115200 /dev/nfs ip=192.168.3.29:192.168.3.57:192.168.3.254:255.255.255.0:marvell:eth0:none nfsroot=192.168.3.57:/root/service/nfs/ktgsap2
+bootcmd=run get_images; run set_bootargs; booti $kernel_addr $ramfs_addr $fdt_addr
+bootdelay=2
+console=console=ttyS0,115200
+eth1addr=00:51:82:11:22:01
+eth2addr=00:51:82:11:22:02
+eth3addr=00:51:82:11:22:03
+ethact=mvpp2-1
+ethaddr=00:51:82:11:22:00
+ethprime=eth1
+fdt_addr=0x4f00000
+fdt_high=0xffffffffffffffff
+fdt_name=gsap-v2/armada-7040-db-GSAP.dtb
+fdtcontroladdr=7f6decb8
+fileaddr=5000000
+filesize=c35200
+gatewayip=192.168.3.254
+get_images=tftpboot $kernel_addr $image_name; tftpboot $fdt_addr $fdt_name; run get_ramfs
+get_ramfs=if test "${ramfs_name}" != "-"; then setenv ramfs_addr 0x8000000; tftpboot $ramfs_addr $ramfs_name; else setenv ramfs_addr -;fi
+hostname=marvell
+image_name=Image
+initrd_addr=0xa00000
+initrd_size=0x2000000
+ipaddr=192.168.3.29
+kernel_addr=0x5000000
+loadaddr=0x5000000
+netdev=eth0
+netmask=255.255.255.0
+nfsboot=set rootpath /root/service/nfs/ktgsap2; setenv bootargs console=ttyS0,115200n8 root=/dev/nfs libata.force=noncq rw nfsroot=192.168.3.57:/root/service/nfs/ktgsap2 ip=192.168.3.29:192.168.3.57:192.168.3.254:255.255.255.0::eth1:off; tftp ${loadaddr} gsap-v2/Image; tftp ${fdt_addr}  gsap-v2/armada-7040-db-GSAP.dtb; booti ${loadaddr} - ${fdt_addr}
+ramfs_addr=-
+ramfs_name=-
+root=/dev/nfs
+rootpath=/root/service/nfs/ktgsap2
+sataboot=run sataboot_load; run sataboot_args; booti 0x5000000 - 0x4f00000
+sataboot_args=setenv bootargs console=ttyS0,115200 root=/dev/sda2 rw
+sataboot_load=scsi scan; ext2load scsi 0 0x5000000 Image; ext4load scsi 0 0x4f00000 armada-7040-db-GSAP.dtb
+serverip=192.168.3.57
+set_bootargs=setenv bootargs $console $root ip=$ipaddr:$serverip:$gatewayip:$netmask:$hostname:$netdev:none nfsroot=$serverip:$rootpath $extra_params
+stderr=serial@512000
+stdin=serial@512000
+stdout=serial@512000
+
+Environment size: 2005/65532 bytes
