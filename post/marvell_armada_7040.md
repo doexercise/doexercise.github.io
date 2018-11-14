@@ -1,76 +1,165 @@
-# Marvell armada 7040 SoC 의 BSP 작업 기록
+# **Marvell armada 7040 SoC 의 BSP 작업 기록**
 
 > update : Nov 9 2018  
-> author : me
+> author : doexercise@naver.com
 
 &nbsp;
 
----
+## **작업환경**
 
-## 작업환경
+- **OS**  : ubuntu 18.04, VirtualBox VM  
+- **SDK** : 2018 September (18.09.4) from Marvell  
+- **Required packages** : libssl-dev device-tree-compiler swig libpython-dev bison flex libncurses-dev curl git
+    ```shell
+    root@buildsrv# apt-get install libssl-dev device-tree-compiler swig libpython-dev bison flex libncurses-dev curl
+    ```
 
-- OS  : ubuntu 18.04, VirtualBox VM  
-- SDK : 2018 September (18.09.4) from Marvell  
-- Required packages : libssl-dev device-tree-compiler swig libpython-dev bison flex libncurses-dev curl git
-
-```shell
-root@buildsrv:~# apt-get install libssl-dev device-tree-compiler swig libpython-dev bison flex libncurses-dev curl
-```
-
-기본적인 작업내용은 `Software -> 2018 September (18.9.4) -> Documentation -> a80x0-a70x0-a39xx-a37xx-a38x-devel-18.09.4-docs.zip` 에 들어있다. 이 파일을 압축해제하고 index.html 을 실행하라.
+- 기본적인 작업내용은 `Armada 70x0 -> Software -> 2018 September (18.9.4) -> Documentation -> a80x0-a70x0-a39xx-a37xx-a38x-devel-18.09.4-docs.zip` 에 들어있다. 이 파일을 압축해제하고 `index.html` 을 실행하라.
 
 &nbsp;
 
----
-
-## Cross Compiler 설치  
+## **Cross Compiler 설치**
 
 1. 빌드서버에 파일 복사
-    - 파일 위치 : Software -> 2018 September (18.9.4) -> SDK Components -> Toolchain -> gcc-7.3.1-linaro-2018.05
+    - 파일 위치 : *Armada 70x0 -> Software -> 2018 September (18.9.4) -> SDK Components -> Toolchain -> gcc-7.3.1-linaro-2018.05*
     - 위 위치에서 압축 파일을 풀어 `gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar.xz` 파일을 빌드시스템에 복사
 
 2. 압축해제 및 PATH 설정
     ```shell
-    root@buildsrv:~# xz -d gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar.xz
-    root@buildsrv:~# tar xf gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar
-    root@buildsrv:~# ln -s gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu toolchain
-    root@buildsrv:~# export CROSS_COMPILE=/root/toolchain/bin/aarch64-linux-gnu-
+    root@buildsrv# xz -d gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar.xz
+    root@buildsrv# tar xf gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar
+    root@buildsrv# ln -s gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu toolchain
+    root@buildsrv# export CROSS_COMPILE=/root/toolchain/bin/aarch64-linux-gnu-
     ```
 
-## U-Boot  
+&nbsp;
+
+## **U-Boot**
+
+### **Getting source**
 
 1. Marvell 에서 제공하는 소스 파일을 사용하는 방법
-    - 파일 위치 : Software -> 2018 September (18.9.4) -> SDK Components -> Firmware & Boot Loaders -> U-Boot 에서 `bootloaders-sources-standalone-18.09.4.zip` 과 `bootloaders-git-standalone-18.09.4.zip` 을 다운로드 하고 빌드 서버로 복사
+    - 파일 위치 : *Armada 70x0 -> Software -> 2018 September (18.9.4) -> SDK Components -> Firmware & Boot Loaders -> U-Boot* 에서 `bootloaders-sources-standalone-18.09.4.zip` 과 `bootloaders-git-standalone-18.09.4.zip` 을 다운로드 하고 빌드 서버로 복사
     - 파일을 복사/압축해제 하고 패치한다.
-    ```shell
-    root@buildsrv:~# mkdir -p uboot/src
-    root@buildsrv:~# mkdir -p uboot/patch
-    root@buildsrv:~# unzip -d uboot/src bootloaders-sources-standalone-18.09.4.zip
-    root@buildsrv:~# unzip -d uboot/patch bootloaders-git-standalone-18.09.4.zip
-    root@buildsrv:~# cd uboot/src
-    root@buildsrv:~/uboot/src# git init
-    root@buildsrv:~/uboot/src# git add .
-    root@buildsrv:~/uboot/src# git commit -m "init"
-    root@buildsrv:~/uboot/src# git am ../patch/*.patch
-    ```
+        ```shell
+        root@buildsrv# mkdir -p uboot/src
+        root@buildsrv# mkdir -p uboot/patch
+        root@buildsrv# unzip -d uboot/src bootloaders-sources-standalone-18.09.4.zip
+        root@buildsrv# unzip -d uboot/patch bootloaders-git-standalone-18.09.4.zip
+        root@buildsrv# cd uboot/src
+        root@buildsrv# git init
+        root@buildsrv# git add .
+        root@buildsrv# git commit -m "init"
+        root@buildsrv# git am ../patch/*.patch
+        ```
 
 2. git 을 이용하는 방법
     - Marvell 에서 제공하는 패치 파일을 복사/압축해제한다. 패치 파일 위치는 `/root/uboot-patch` 가 될 것이다.
-    ```shell
-    root@buildsrv:~# unzip -d uboot-patch bootloaders-git-standalone-18.09.4.zip
-    ```
+        ```shell
+        root@buildsrv:~# unzip -d uboot-patch bootloaders-git-standalone-18.09.4.zip
+        ```
     - git 을 이용하여 소스를 다운로드 한다
-    ```shell
-    root@buildsrv:~# git clone git://git.denx.de/u-boot.git
-    root@buildsrv:~# mv u-boot u-boot-2018.03-18.09.4
-    root@buildsrv:~# cd u-boot-2018.03-18.09-4
-    root@buildsrv:~# git checkout v2018.03 -b marvell-18.09.4
-    ```
+        ```shell
+        root@buildsrv# git clone git://git.denx.de/u-boot.git
+        root@buildsrv# mv u-boot u-boot-2018.03-18.09.4
+        root@buildsrv# cd u-boot-2018.03-18.09-4
+        root@buildsrv# git checkout v2018.03 -b marvell-18.09.4
+        ```
     - 패치한다
+        ```shell
+        root@buildsrv# cd u-boot-2018.03-18.09.4
+        root@buildsrv# git am -3 /root/uboot-patch/*.patch
+        ```
+
+### **device tree 수정**
+
+1. custom board 에 맞게 device tree 를 수정한다.
+2. device tree 는 `<uboot-source-dir>/arch/arm/dts/armada-7040-db.dts` 에 있다.
+
+### **u-boot build**
+
+1. `CROSS_COMPILE` 환경변수가 설정되었다면 빌드한다.
     ```shell
-    root@buildsrv:~# cd u-boot-2018.03-18.09.4
-    root@buildsrv:~/u-boot-2018.03-18.09.4# git am -3 /root/uboot-patch/*.patch
+    root@buildsrv# cd <path-to-uboot-source>
+    root@buildsrv# make mrproper
+    root@buildsrv# make mvebu_db_armada8k_defconfig
+    root@buildsrv# DEVICE_TREE=armada-7040-db
     ```
+2. custom device tree 를 사용한다면 위 작업 중 `DEVICE_TREE=` 부분에 적절한 이름을 넣는다.  
+3. 우리가 사용할 결과물은 소스 디렉토리 최상단의 `u-boot.bin` 파일이다.
+
+&nbsp;
+
+## **ATF (Arm-Trusted-Firmware)**
+
+### **개요**
+
+  왜 ATF가 생겨났는가? 그런 자세한 내용은 인터넷을 찾아보자. 사실 나는 배경지식 없다보니 찾아봐도 뭔 소린지 잘 모르겠다. 어쨌든 이제 그냥 부트로더를 올릴 수가 없고 ATF 로 `u-boot.bin` 을 빌드해서 올려야 한다. 여기서는 그 절차를 설명한다.
+
+### **다운로드**
+
+1. ATF  
+    - 지금 사용하는 Marvell SDK 는 ATF V1.5 를 기반으로 되어 있다. 이 버전은 아래 링크에서 확인할 수 있다.
+        > https://github.com/ARM-software/arm-trusted-firmware/tree/v1.5  
+    - 다만, marvell document 에서는 아래와 같은 방법으로 안내하고 있다.
+        ```shell
+        root@buildsrv# git clone https://github.com/ARM-software/arm-trusted-firmware.git
+        root@buildsrv# cd arm-trusted-firmware
+        root@buildsrv# git checkout 7f6d8f49 -b marvell-18.09.4
+        ```
+    - marvell 에서 제공하는 `git-atf-v1.5-armada-18.09.4.zip` 으로 패치한다.
+        ```shell
+        root@buildsrv# cd <path-to-atf-source>
+        root@buildsrv# unzip -d patch git-atf-v1.5-armada-18.09.4.zip
+        root@buildsrv# git am -3 patch/*.patch
+        ```
+
+2. mv_ddr
+    - A7K/A8K 의 경우 atf를 빌드하기 위해서 `MV_DDR_PATH=` 환경변수를 지정해야 한다. 여기에 사용할 mv_ddr 소스 파일과 디렉토리를 생성한다.
+    - 두가지 방법이 있다. 하나는 `sources-mv_ddr-armada-18.09.2.zip` 파일을 풀거나, 또는 `git-mv_ddr-armada-18.09.2.zip` 파일을 이용하여 파일을 생성하는 것이다. 여기서는 후자를 이용하는 방법을 기술한다. 이 방법은 `*.patch` 파일을 이용하여 빈 디렉토리에 소스 파일을 생성하는 것이다.
+        ```shell
+        root@buildsrv# mkdir mv_ddr_src
+        root@buildsrv# cd mv_ddr_src
+        root@buildsrv# unzip -d mv_ddr_git git-mv_ddr-armada-18.09.2.zip
+        root@buildsrv# git init
+        root@buildsrv# git am mv_ddr_git/*.patch
+        ```
+
+### **ATF build**
+
+1. set path for `CROSS_COMPILER`
+    ```shell
+    root@buildsrv# export CROSS_COMPILE=/root/toolchain/bin/aarch64-linux-gnu-
+    ```
+
+2. set path for `u-boot.bin`
+    ```shell
+    root@buildsrv# export BL33=/root/u-boot/src/u-boot.bin
+    ```
+
+3. set path for mss/scp image 
+    - 문서에 따르면 A80x0, A8xxy 만 해당된다고 되어 있으나 A70x0 도 이것이 필요한 듯 하다.
+    - 현재 파일명은 `mrvl_scp_bl2_mss_ap_cp1.img`이고, *Armada 70x0 -> Software -> 2018 September (18.9.4) -> SDK Components -> Firmware & Boot Loaders -> Firmware* 에 zip 파일로 게시되어 있다.
+    ``` shell
+    root@buildsrv# export SCP_BL2=/root/firmware/mrvl_scp_bl2*.img
+    ```
+
+4. set path for MV_DDR
+    ```shell
+    root@buildsrv# export MV_DDR_PATH=/root/mv_ddr_src
+    ```
+
+5. build
+    ```shell
+    root@buildsrv# make distclean
+    root@buildsrv# make DEBUG=1 USE_COHERENT_MEM=0 LOG_LEVEL=20 SECURE=0 PLAT=a70x0 all fip
+    ```
+    > 세부적인 빌드 옵션은 https://github.com/ARM-software/arm-trusted-firmware/blob/v1.5/docs/user-guide.rst 을 참고하라.
+
+    우리가 필요한 결과물은 **`<path-to-source>/build/a70x0/debug/flash-image.bin`** 이다.
+
+
+
 ** Default Environment **
 
 Marvell>> pri
@@ -172,55 +261,55 @@ x26 =           0x0000000000000000
 x27 =           0x0000000000000000
 x28 =           0x000000007f6ec480
 x29 =           0x000000000402d5e0
-scr_el3 =               0x0000000000000731
-sctlr_el3 =             0x0000000000cd183f
-cptr_el3 =              0x0000000000000000
-tcr_el3 =               0x0000000080803520
+scr_el3 =       0x0000000000000731
+sctlr_el3 =     0x0000000000cd183f
+cptr_el3 =      0x0000000000000000
+tcr_el3 =       0x0000000080803520
 daif =          0x00000000000002c0
-mair_el3 =              0x00000000004404ff
-spsr_el3 =              0x00000000600003c9
-elr_el3 =               0x000000007ffa34a4
-ttbr0_el3 =             0x000000000402ece0
-esr_el3 =               0x000000005e000000
-far_el3 =               0x0000000000000000
-spsr_el1 =              0x0000000000000000
-elr_el1 =               0x0000000000000000
-spsr_abt =              0x0000000000000000
-spsr_und =              0x0000000000000000
-spsr_irq =              0x0000000000000000
-spsr_fiq =              0x0000000000000000
-sctlr_el1 =             0x0000000030d00800
-actlr_el1 =             0x0000000000000000
-cpacr_el1 =             0x0000000000000000
-csselr_el1 =            0x0000000000000000
-sp_el1 =                0x0000000000000000
-esr_el1 =               0x0000000000000000
-ttbr0_el1 =             0x0000000000000000
-ttbr1_el1 =             0x0000000000000000
-mair_el1 =              0x0000000000000000
-amair_el1 =             0x0000000000000000
-tcr_el1 =               0x0000000000000000
-tpidr_el1 =             0x0000000000000000
-tpidr_el0 =             0x0000000000000000
-tpidrro_el0 =           0x0000000000000000
-dacr32_el2 =            0x0000000000000000
-ifsr32_el2 =            0x0000000000000000
-par_el1 =               0x0000000000000000
-mpidr_el1 =             0x0000000080000000
-afsr0_el1 =             0x0000000000000000
-afsr1_el1 =             0x0000000000000000
-contextidr_el1 =                0x0000000000000000
-vbar_el1 =              0x0000000000000000
-cntp_ctl_el0 =          0x0000000000000000
-cntp_cval_el0 =         0x0000000000000000
-cntv_ctl_el0 =          0x0000000000000000
-cntv_cval_el0 =         0x0000000000000000
-cntkctl_el1 =           0x0000000000000000
-fpexc32_el2 =           0x0000000000000700
-sp_el0 =                0x000000000402d5e0
-isr_el1 =               0x0000000000000000
-cpuectlr_el1 =          0x0000001b00000040
-cpumerrsr_el1 =         0x0000000000000000
-l2merrsr_el1 =          0x0000000000000000
+mair_el3 =      0x00000000004404ff
+spsr_el3 =      0x00000000600003c9
+elr_el3 =       0x000000007ffa34a4
+ttbr0_el3 =     0x000000000402ece0
+esr_el3 =       0x000000005e000000
+far_el3 =       0x0000000000000000
+spsr_el1 =      0x0000000000000000
+elr_el1 =       0x0000000000000000
+spsr_abt =      0x0000000000000000
+spsr_und =      0x0000000000000000
+spsr_irq =      0x0000000000000000
+spsr_fiq =      0x0000000000000000
+sctlr_el1 =     0x0000000030d00800
+actlr_el1 =     0x0000000000000000
+cpacr_el1 =     0x0000000000000000
+csselr_el1 =    0x0000000000000000
+sp_el1 =        0x0000000000000000
+esr_el1 =       0x0000000000000000
+ttbr0_el1 =     0x0000000000000000
+ttbr1_el1 =     0x0000000000000000
+mair_el1 =      0x0000000000000000
+amair_el1 =     0x0000000000000000
+tcr_el1 =       0x0000000000000000
+tpidr_el1 =     0x0000000000000000
+tpidr_el0 =     0x0000000000000000
+tpidrro_el0 =   0x0000000000000000
+dacr32_el2 =    0x0000000000000000
+ifsr32_el2 =    0x0000000000000000
+par_el1 =       0x0000000000000000
+mpidr_el1 =     0x0000000080000000
+afsr0_el1 =     0x0000000000000000
+afsr1_el1 =     0x0000000000000000
+contextidr_el1 =0x0000000000000000
+vbar_el1 =      0x0000000000000000
+cntp_ctl_el0 =  0x0000000000000000
+cntp_cval_el0 = 0x0000000000000000
+cntv_ctl_el0 =  0x0000000000000000
+cntv_cval_el0 = 0x0000000000000000
+cntkctl_el1 =   0x0000000000000000
+fpexc32_el2 =   0x0000000000000700
+sp_el0 =        0x000000000402d5e0
+isr_el1 =       0x0000000000000000
+cpuectlr_el1 =  0x0000001b00000040
+cpumerrsr_el1 = 0x0000000000000000
+l2merrsr_el1 =  0x0000000000000000
 
 ==========================================================================================
