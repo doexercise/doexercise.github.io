@@ -36,7 +36,7 @@
 
 ## **U-Boot**
 
-### **Getting source**
+### **Getting u-boot source**
 
 1. Marvell 에서 제공하는 소스 파일을 사용하는 방법
     - 파일 위치 : *Armada 70x0 -> Software -> 2018 September (18.9.4) -> SDK Components -> Firmware & Boot Loaders -> U-Boot* 에서 `bootloaders-sources-standalone-18.09.4.zip` 과 `bootloaders-git-standalone-18.09.4.zip` 을 다운로드 하고 빌드 서버로 복사
@@ -56,7 +56,7 @@
 2. git 을 이용하는 방법
     - Marvell 에서 제공하는 패치 파일을 복사/압축해제한다. 패치 파일 위치는 `/root/uboot-patch` 가 될 것이다.
         ```shell
-        root@buildsrv:~# unzip -d uboot-patch bootloaders-git-standalone-18.09.4.zip
+        root@buildsrv# unzip -d uboot-patch bootloaders-git-standalone-18.09.4.zip
         ```
     - git 을 이용하여 소스를 다운로드 한다
         ```shell
@@ -83,7 +83,7 @@
     root@buildsrv# cd <path-to-uboot-source>
     root@buildsrv# make mrproper
     root@buildsrv# make mvebu_db_armada8k_defconfig
-    root@buildsrv# DEVICE_TREE=armada-7040-db
+    root@buildsrv# make DEVICE_TREE=armada-7040-db
     ```
 2. custom device tree 를 사용한다면 위 작업 중 `DEVICE_TREE=` 부분에 적절한 이름을 넣는다.  
 3. 우리가 사용할 결과물은 소스 디렉토리 최상단의 `u-boot.bin` 파일이다.
@@ -137,7 +137,7 @@
     root@buildsrv# export BL33=/root/u-boot/src/u-boot.bin
     ```
 
-3. set path for mss/scp image 
+3. set path for mss/scp image  
     - 문서에 따르면 A80x0, A8xxy 만 해당된다고 되어 있으나 A70x0 도 이것이 필요한 듯 하다.
     - 현재 파일명은 `mrvl_scp_bl2_mss_ap_cp1.img`이고, *Armada 70x0 -> Software -> 2018 September (18.9.4) -> SDK Components -> Firmware & Boot Loaders -> Firmware* 에 zip 파일로 게시되어 있다.
     ``` shell
@@ -158,7 +158,66 @@
 
     우리가 필요한 결과물은 **`<path-to-source>/build/a70x0/debug/flash-image.bin`** 이다.
 
+&nbsp;
 
+## **Kernel**
+
+### **Getting kernel source**
+
+```shell
+root@buildsrv# wget https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/linux-4.14.22.tar.xz
+root@buildsrv# xz -d linux-4.14.22.tar.xz
+root@buildsrv# tar xf linux-4.14.22.tar  # linux-4.14.22 디렉토리 생성됨
+```
+
+### **kernel patch**
+
+- marvell 에서 제공하는 `git-linux-4.14.22-armada-18.09.3.zip` 파일을 이용한다.
+    ```shell
+    root@buildsrv# unzip -d patch-4.14.22 git-linux-4.14.22-armada-18.09.3.zip
+    root@buildsrv# cd linux-4.14.22
+    root@buildsrv# git init
+    root@buildsrv# git add .
+    root@buildsrv# git commit -m "init"
+    root@buildsrv# git am -3 ../patch-4.14.22/*.patch
+    ```
+
+### **kenel build**
+
+- command
+    ```shell
+    root@buildsrv# cd <path-to-kernel_source>
+    root@buildsrv# export CROSS_COMPILE=<path-to-cross-compile>
+    root@buildsrv# export ARCH=arm64
+    root@buildsrv# make mrproper
+    root@buildsrv# make mvebu_v8_lsp_defconfig  # 여기서 기본 .config 파일을 생성
+    root@buildsrv# make menuconfig              # 필요한 경우 여기서 설정 변경
+    root@buildsrv# make
+    ```
+- 결과물 중 `arch/arm64/boot/Image` 와 `arch/arm64/boot/dts/marvell/armada-7040-db.dtb` 를 사용할 것이다. 물론 별도의 dts 만들었다면 해당 파일에 대응하는 dtb 파일을 사용하면 될 것이다.
+
+### **What is mvpp2x-sysfs for?**
+
+- marvell 에서 제공하는 `Linux BSP` 에 보면 `sources-mvpp2x-sysfs-devel-18.09.0.zip` 파일이 있다. 이것은 어디에 쓰는 물건인고?  
+- mvpp2x 는 이더넷 장치를 지칭하는 것으로 보인다. mvpp2x-sysfs 는 이더넷 장치에 대한 정보 획득 및 설정을 sysfs 를 통해 할 수 있도록 하는 커널 모듈(드라이버) 로 생각된다.  
+- marvell 에서 제공하는 html 문서에서 `Docs » Linux Kernel Guides » Packet Processor Driver User Guide » PPv2.2 Sysfs Support` 부분에서 이 내용을 확인할 수 있다.  
+- 다만 문서의 내용에 따르면 `<path-to-kernel-source>/drivers/net/ethernet/marvell/mvpp2x/` 에 소스를 복사하라고 되어 있는데 해당 디렉토리가 없다. 이거 없이 그냥 컴파일 하면 `mv_pp2x.h` 파일을 찾지 못해 에러가 난다. `mvpp2x` 드라이버 소스는 아래 링크에서 찾을 수 있다.  
+    > https://github.com/MarvellEmbeddedProcessors/mvpp2x-marvell 
+- 준비가 되면 `ARCH=`, `CROSS_COMPILE=`, `KDIR=` 을 설정하고 빌드한다. 그러면 `mvpp2x_sysfs.ko` 파일이 생성되는데 이 파일을 로드해서 사용하면 된다고 한다. 사용법은 문서를 참고하라. 나는 직접 해보지는 않았다.
+
+
+---
+64bitUbuntu1604.tar.bz2: 64bit (a.k.a arm64) Base root filesystem downloaded from internet and modified as follows
+	A.	cp lib/systemd/system/getty@.service etc/systemd/system/getty.target.wants/getty@ttyS0.service
+		change all ttyxxx to ttyS0 in this file
+	B. 	Remove x (between first : and second :) in /etc/passwd for root
+	C.	Create the below file and folder
+		/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
+		[Service]
+		ExecStart=
+		ExecStart=-/usr/bin/agetty --autologin username -s %I 115200,38400,9600 vt102
+	D. For Ar-LP aka A3700
+		change S0 to MV0 in step A and C. Add ttyMV0 to /etc/securetty
 
 ** Default Environment **
 
