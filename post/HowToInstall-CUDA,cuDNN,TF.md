@@ -79,6 +79,7 @@ Download scripts
 
 ```shell
 root@localhost# wget https://github.com/tensorflow/benchmarks/archive/master.zip
+root@localhost# unzip master.zip
 ```
 
 Run scripts

@@ -18,7 +18,7 @@
 ```shell
 #!/bin/bash
 CONF=/etc/modprobe.d/blacklist-nouveau.conf
-touch $CONF
+
 echo "blacklist nouveau" >> $CONF
 echo "options nouveau modeset=0" >> $CONF
 update-initramfs -u
@@ -53,7 +53,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
 ## **Install cuDNN-7.4**
 
 Download `cudnn-9.0-linux-x64-v7.4.1.5.tgz` at [developer.nvidia.com](https://developer.nvidia.com/cudnn)  
-And perform following commnds
+And perform following commands
 
 ```shell
 root@localhost# tar xfz cudnn-9.0-linux-x64-v7.4.1.5.tgz

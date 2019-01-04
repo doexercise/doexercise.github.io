@@ -160,7 +160,7 @@
 
 &nbsp;
 
-## **Kernel**
+## **Linux Kernel**
 
 ### **Getting kernel source**
 
@@ -205,33 +205,139 @@ root@buildsrv# tar xf linux-4.14.22.tar  # linux-4.14.22 디렉토리 생성됨
     > https://github.com/MarvellEmbeddedProcessors/mvpp2x-marvell 
 - 준비가 되면 `ARCH=`, `CROSS_COMPILE=`, `KDIR=` 을 설정하고 빌드한다. 그러면 `mvpp2x_sysfs.ko` 파일이 생성되는데 이 파일을 로드해서 사용하면 된다고 한다. 사용법은 문서를 참고하라. 나는 직접 해보지는 않았다.
 
+&nbsp;
 
----
-64bitUbuntu1604.tar.bz2: 64bit (a.k.a arm64) Base root filesystem downloaded from internet and modified as follows
-	A.	cp lib/systemd/system/getty@.service etc/systemd/system/getty.target.wants/getty@ttyS0.service
-		change all ttyxxx to ttyS0 in this file
-	B. 	Remove x (between first : and second :) in /etc/passwd for root
-	C.	Create the below file and folder
-		/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
-		[Service]
-		ExecStart=
-		ExecStart=-/usr/bin/agetty --autologin username -s %I 115200,38400,9600 vt102
-	D. For Ar-LP aka A3700
-		change S0 to MV0 in step A and C. Add ttyMV0 to /etc/securetty
+## **RootFS**
 
-** Default Environment **
+### **root filesystem 만드는 방법**
 
+- root filesystem(이하 rootfs)를 만드는 방법은 여러가지가 있을 수 있다.
+  - 직접 디렉토리를 생성하여 busybox 등을 이용해 라이브러리를 복사하는 방법
+  - buildroot를 이용하는 방법
+  - marvell 에서 제공하는 배포판을 이용하는 방법
+  - anything else?
+  
+- 여기서는 일단 marvell 에서 주는 걸로 해보자.
+
+### **Getting rootfs**  
+
+- `Armada 70x0 -> Software -> 2018 September (18.09.4) -> SDK Components -> Distributions -> Ubuntu 16.04`에서 압축된 rootfs 를 다운로드한다. 파일명은 `64bitUbuntu1604.tar.bz2`이다.
+
+- 이 파일에서 수정된 내용은 다음과 같다(압축파일 중 readme.txt 파일 참고)
+
+    ```text
+    64bitUbuntu1604.tar.bz2: 64bit (a.k.a arm64) Base root filesystem downloaded from internet and modified as follows
+    	A.	cp lib/systemd/system/getty@.service etc/systemd/system/getty.target.wants/getty@ttyS0.service
+    		change all ttyxxx to ttyS0 in this file
+    	B. 	Remove x (between first : and second :) in /etc/passwd for root
+    	C.	Create the below file and folder
+    		/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
+    		[Service]
+    		ExecStart=
+    		ExecStart=-/usr/bin/agetty --autologin username -s %I 115200,38400,9600 vt102
+    	D. For Ar-LP aka A3700
+    		change S0 to MV0 in step A and C. Add ttyMV0 to /etc/securetty
+    ```
+- 이 파일을 압축을 풀어서 최상위 디렉토리를 NFS로 설정하고 root 로 삼아 작업하면 된다.
+
+### **NFS 이용하여 작업하기**
+
+해보긴 했는데 이 글을 쓰는 시점에서 다시 해볼 기회가 없어서 기억나는 부분만 적는다.
+
+- NFS 부트를 위한 bootargs 설정  
+
+  ```shell
+  u-boot> setenv bootargs console=ttyS0,115200 root=/dev/nfs libata.force=noncq rw nfsroot=192.168.3.57:/nfsroot,vers=4,tcp ip=192.168.3.29:192.168.3.57:192.168.3.254:255.255.255.0:marvell:eth1:off
+  (ip = 보드 IP : 서버 IP : 게이트웨이 IP : 서브넷마스크 : 클라이언트 이름 : 이더넷 : 자동설정 여부)
+  (dhcp가 지원된다면 ip=dhcp 라고 해도 되는 듯)
+  ```
+
+- tftp 에서 kernel과 device tree 를 받아오며 부팅을 시작한다.
+
+  ```shell
+  u-boot> setenv serverip ${server_ip_addr}
+  u-boot> tftp ${kernel_addr} ${tftp_root}/Image
+  u-boot> tftp ${fdt_addr} ${tftp_root}/armada-7040-db.dtb
+  u-boot> booti ${kernel_addr} - ${fdt_addr}
+  ```
+
+- 이렇게 해서 부팅이 된다면 필요한 시스템 설정을 완료하고 디스크에 쓴다. 디스크에 쓰는 방법은 후술한다.
+
+&nbsp;
+
+## **결과물 적용하기**
+
+하드웨어가 정상적으로 제작되었다면 맨 처음 uart 화면을 보게 될 것이다. 여기서는 uart 부터 시작해서 u-boot, kernel 을 올리는 작업을 설명할 것이다.
+
+### **UART 연결하기**
+
+- Serial Terminal 연결 및 파일 전송을 위해 여기서는 ClearTerminal 을 이용한다. putty 는 그 자체로는 파일을 전송할 수 없다.
+
+- Serial Cable 로 연결을 하면 아래와 같이 `Trying Uart..` 화면을 보게 될 것이다.  
+  ![uart](../img/trying_uart.png)  
+
+- 여기서 pattern 파일을 보낸다. 파일은 `<u-boot-src>/tools/marvell/xmodem/xmodem_boot.pattern` 이다. 전송모드는 `raw binary`이다.  
+  ![pattern](../img/select_pattern.png)
+
+- 패턴파일을 보내면 보드는 u-boot 파일을 기다린다.  
+  ![wait_uboot](../img/wait_u-boot.png)
+
+- u-boot 보내는 옵션은 pattern 보낼 때와 달리 `xmodem` 모드로 보낸다.  
+  ![send_uboot](../img/select_u-boot.png)
+
+- 파일 전송중  
+  ![uboot](../img/transfer_u-boot.png)
+  
+- u-boot 전송이 완료되고 프롬프트가 뜨면 일단 성공이다. 이 상태는 u-boot가 메모리 상에서 실행되고 있는 것이다. 추가적인 사항들을 확인하고 나서 flash 에 쓰면 된다.
+
+### **RootFS를 디스크에 쓰기**
+
+이 부분은 사실 `디스크 복사`하기 이다. 기존에 만들어진 디스크를 옮겼던 작업기록이다.
+
+- 파티션 이름이나 크기가 동일할 필요는 없다. 다만 `/etc/fstab` 에 기록된 구조와 비슷하게 되어 있어야하고, 특히 UUID로 록되어 있다면 UUID를 맞춰주어야 한다.
+- 아래 예제를 보자. 원본이 아래와 같았다면 최소 3개의 파티션을 각각 ext4, ext2, swap 파티션으로 만들고 각각의 UUID를 래와 동일하게 설정해 주어야 한다.
+
+  ```shell
+  UUID=d023b6ce-0f70-439c-9cef-bf1e125ed01d   /         ext4    errors=remount-ro 0       1
+  UUID=005add91-adea-4d72-a362-aa4f443ca031   /boot     ext2    defaults          0       2
+  UUID=95c28be4-298e-4547-9fc4-332e85178e75   none      swap    sw                0       0
+  ```
+
+- 위 작업과 관련된 명령어는 아래를 참고하라.
+
+  ```shell
+  shell> mkfs.ext2 /dev/sdb1
+  shell> tune2fs -U ${UUID-1} /dev/sdb1
+  shell> mkswap -U ${UUID-2} /dev/sdb2
+  shell> mkfs.ext4 /dev/sdb3
+  shell> tune2fs -U ${UUID-3} /dev/sdb3
+  ```
+
+- 참고로 경우에 따라 아래 파일도 수정해야 한다.
+
+  ```shell
+  shell> cat /etc/initramfs-tools/conf.d/resume
+  RESUME=UUID=95c28be4-298e-4547-9fc4-332e85178e75
+  ```  
+
+- UUID를 바꾸고 싶은 경우에는 `initrd` 를 업데이트 해야한다는데 이건 NFS 로 부팅해서 변경해야 할 듯하다.
+
+&nbsp;
+
+## **U-BOOT Environment Example**
+
+```shell
 Marvell>> pri
 baudrate=115200
 bootargs=console=ttyS0,115200 /dev/nfs ip=192.168.3.29:192.168.3.57:192.168.3.254:255.255.255.0:marvell:eth0:none nfsroot=192.168.3.57:/root/service/nfs/ktgsap2
 bootcmd=run get_images; run set_bootargs; booti $kernel_addr $ramfs_addr $fdt_addr
 bootdelay=2
 console=console=ttyS0,115200
+ethaddr=00:51:82:11:22:00
 eth1addr=00:51:82:11:22:01
 eth2addr=00:51:82:11:22:02
 eth3addr=00:51:82:11:22:03
 ethact=mvpp2-1
-ethaddr=00:51:82:11:22:00
 ethprime=eth1
 fdt_addr=0x4f00000
 fdt_high=0xffffffffffffffff
@@ -264,24 +370,7 @@ set_bootargs=setenv bootargs $console $root ip=$ipaddr:$serverip:$gatewayip:$net
 stderr=serial@512000
 stdin=serial@512000
 stdout=serial@512000
-
-Environment size: 2005/65532 bytes
-
-=======================================================================================================
-
-** for NFS boot
-
-setenv bootargs console=ttyS0,115200 root=/dev/nfs libata.force=noncq rw nfsroot=192.168.3.57:/nfsroot,vers=4,tcp ip=192.168.3.29:192.168.3.57:192.168.3.254:255.255.255.0:marvell:eth1:off; tftp ${loadaddr} gsap-v2/Image; tftp ${fdt_addr}  gsap-v2/armada-7040-db-GSAP.dtb; booti ${loadaddr} - ${fdt_addr}
- 
-=======================================================================================================
-
-** histroy
-
-Marvell> setenv bootcmd_bak run get_images\; run set_bootargs\; booti \$kernel_addr \$ramfs_addr \$fdt_addr
-Marvell> printevn bootcmd_bak
-  bootcmd_bak=run get_images; run set_bootargs; booti $kernel_addr $ramfs_addr $fdt_addr
-Marvell> setenv bootcmd run sataboot
-Mravell> saveenv
+```
 
 =======================================================================================================
 
