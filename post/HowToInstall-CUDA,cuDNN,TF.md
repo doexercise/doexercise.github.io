@@ -9,7 +9,7 @@
   - cuDNN : cuda-9.0-linux-x64-v7.4.1.5
 - python : 3.5.2
   - pip : 18.1
-  - tensorflow : tf-nightly-gpu 1.13.0.dev20181122
+  - tensorflow : tf-nightly-gpu 1.12.0.dev20181012
 
 &nbsp;
 
@@ -68,7 +68,7 @@ root@localhost# cp -P cuda/lib64/* /usr/local/cuda/lib64/
 Do not install `tensorflow-gpu`, it is not compatible with `tf_cnn_benchmarks.py`
 
 ```shell
-root@localhost# python3 -m pip install tf-nightly-gpu
+root@localhost# python3 -m pip install tf-nightly-gpu==1.12.0.dev20181012
 ```
 
 &nbsp;
@@ -78,8 +78,8 @@ root@localhost# python3 -m pip install tf-nightly-gpu
 Download scripts
 
 ```shell
-root@localhost# wget https://github.com/tensorflow/benchmarks/archive/master.zip
-root@localhost# unzip master.zip
+root@localhost# wget https://github.com/tensorflow/benchmarks/archive/cnn_tf_v1.12_compatible.zip
+root@localhost# unzip cnn_tf_v1.12_compatible.zip
 ```
 
 Run scripts
@@ -88,9 +88,50 @@ Run scripts
 #!/bin/bash
 
 PY=/usr/bin/python3
-SCRIPTS=/root/benchmarks-master/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py
+SCRIPTS=/root/benchmarks-cnn_tf_v1.12_compatible/scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py
 
-${PY} ${SCRIPTS} --num_gpus=1 --batch_size=32 --model=resnet50  --variable_update=parameter_server --local_parameter_device=cpu
+${PY} ${SCRIPTS} --num_gpus=1 --num_batches=1000 --batch_size=32 --model=resnet50 \
+                 --variable_update=parameter_server --local_parameter_device=cpu
 ```
 
-> refer to [github](https://github.com/tensorflow/benchmarks)
+> refer to [tensorflow github](https://github.com/tensorflow/benchmarks)
+
+&nbsp;
+
+---
+## **This is installation guide in windows**
+
+1. Install cuda-9.0  
+	**Please don't install display driver included in cuda, that driver is not compatible with Aetina MXM.**
+	- base installer : `cuda_9.0.176_win10_network.exe`
+	- 4 patches : `cuda_9.0.176.1_windows.exe` ~ `cuda_9.0.176.4_windows.exe`
+
+2. Install cuDNN 7.4.2.24  
+	**Make sure the cuDNN version is compatible with cuda.**
+	- unzip `cudnn-9.0-windows10-x64-v7.4.2.24.zip`
+	- copy entire files and folders into cuda installation path
+	  usually cuda installation path is `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0`
+
+3. Install python
+	- `python-3.6.5-amd64.exe`
+
+4. Install tf-nightly-gpu  
+	**You don't need to install tensorflow-gpu seperatly.** 
+	- run cmd.exe as administrator  
+        ```shell
+	  py -m pip install tf-nightly-gpu==1.12.0.dev20181010
+        ```
+
+5. Install benchmarks scripts
+	**The scripts and tf-nightly-gpu should be paired.**
+	- unzip `benchmarks-cnn_tf_v1.12_compatible.zip` and remember where `tf_cnn_benchmarks.py` is
+	- modify `%PYTHON%` and `%SCRIPTS%` variables in `run.bat`
+
+&nbsp;
+
+## **Troubleshooting**
+1. Fail to install `Visual Studio Integration` in cuda installation progress.
+	- When I was trying to install cuda_9.0, this error occured
+	- To avoid, 
+		1) Uncheck `Visual Studio Integration 9.0` in CUDA Components
+		2) Or install cuda_9.2 first, and then install cuda_9.0.
