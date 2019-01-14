@@ -34,11 +34,11 @@ reboot
 **`cuda`** include the nvidia driver, so you do not need to install driver separately.
 
 ```shell
-root@localhost# wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.0.176-1_amd64.deb
-root@localhost# dpkg -i cuda-repo-ubuntu1604_9.0.176-1_amd64.deb
-root@localhost# apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
-root@localhost# apt-get update
-root@localhost# apt-get install cuda-9-0
+wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.0.176-1_amd64.deb
+dpkg -i cuda-repo-ubuntu1604_9.0.176-1_amd64.deb
+apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
+apt-get update
+apt-get install cuda-9-0
 ```
 
 Add envs to `~/.bashrc`
@@ -56,9 +56,9 @@ Download `cudnn-9.0-linux-x64-v7.4.1.5.tgz` at [developer.nvidia.com](https://de
 And perform following commnds
 
 ```shell
-root@localhost# tar xfz cudnn-9.0-linux-x64-v7.4.1.5.tgz
-root@localhost# cp -P cuda/include/* /usr/local/cuda/include/
-root@localhost# cp -P cuda/lib64/* /usr/local/cuda/lib64/
+tar xfz cudnn-9.0-linux-x64-v7.4.1.5.tgz
+cp -P cuda/include/* /usr/local/cuda/include/
+cp -P cuda/lib64/* /usr/local/cuda/lib64/
 ```
 
 &nbsp;
@@ -68,7 +68,7 @@ root@localhost# cp -P cuda/lib64/* /usr/local/cuda/lib64/
 Do not install `tensorflow-gpu`, it is not compatible with `tf_cnn_benchmarks.py`
 
 ```shell
-root@localhost# python3 -m pip install tf-nightly-gpu==1.12.0.dev20181012
+python3 -m pip install tf-nightly-gpu==1.12.0.dev20181012
 ```
 
 &nbsp;
@@ -78,8 +78,8 @@ root@localhost# python3 -m pip install tf-nightly-gpu==1.12.0.dev20181012
 Download scripts
 
 ```shell
-root@localhost# wget https://github.com/tensorflow/benchmarks/archive/cnn_tf_v1.12_compatible.zip
-root@localhost# unzip cnn_tf_v1.12_compatible.zip
+wget https://github.com/tensorflow/benchmarks/archive/cnn_tf_v1.12_compatible.zip
+unzip cnn_tf_v1.12_compatible.zip
 ```
 
 Run scripts
@@ -122,7 +122,7 @@ ${PY} ${SCRIPTS} --num_gpus=1 --num_batches=1000 --batch_size=32 --model=resnet5
 	  py -m pip install tf-nightly-gpu==1.12.0.dev20181010
         ```
 
-5. Install benchmarks scripts
+5. Install benchmarks scripts  
 	**The scripts and tf-nightly-gpu should be paired.**
 	- unzip `benchmarks-cnn_tf_v1.12_compatible.zip` and remember where `tf_cnn_benchmarks.py` is
 	- modify `%PYTHON%` and `%SCRIPTS%` variables in `run.bat`
