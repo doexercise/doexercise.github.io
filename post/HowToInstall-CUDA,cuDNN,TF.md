@@ -119,7 +119,7 @@ ${PY} ${SCRIPTS} --num_gpus=1 --num_batches=1000 --batch_size=32 --model=resnet5
 	**You don't need to install tensorflow-gpu seperatly.** 
 	- run cmd.exe as administrator  
         ```shell
-	  py -m pip install tf-nightly-gpu==1.12.0.dev20181010
+	  	py -m pip install tf-nightly-gpu==1.12.0.dev20181010
         ```
 
 5. Install benchmarks scripts  
